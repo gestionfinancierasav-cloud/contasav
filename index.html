@@ -3,145 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Nuevo Cliente</title>
+    <title>Lista de Clientes</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-8 font-sans">
+<body class="bg-pink-50 p-8 font-sans min-h-screen">
 
-    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Registro de Nuevo Cliente</h2>
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg border-t-4 border-pink-500">
         
-        <form id="form-cliente" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- Nombres -->
-                <div>
-                    <label for="Nombres" class="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
-                    <input type="text" id="Nombres" name="Nombres" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
+        <!-- Encabezado -->
+        <div class="flex justify-between items-center mb-6 border-b pb-4 border-pink-100">
+            <h2 class="text-3xl font-bold text-pink-700">Directorio de Clientes</h2>
+            <!-- Botón para volver al formulario (asumiendo que se llama index.html) -->
+            <a href="index.html" class="px-5 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition duration-200 shadow-sm font-medium">
+                + Nuevo Cliente
+            </a>
+        </div>
 
-                <!-- Apellido -->
-                <div>
-                    <label for="Apellido" class="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                    <input type="text" id="Apellido" name="Apellido" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
+        <!-- Contenedor de la tabla -->
+        <div class="overflow-x-auto rounded-lg border border-pink-100 shadow-sm">
+            <table class="min-w-full bg-white">
+                <thead class="bg-pink-100">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-pink-800 uppercase tracking-wider">Nombre Completo</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-pink-800 uppercase tracking-wider">Documento</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-pink-800 uppercase tracking-wider">Contacto</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-pink-800 uppercase tracking-wider">Ocupación</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-pink-800 uppercase tracking-wider">Fecha Registro</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-clientes" class="divide-y divide-pink-50">
+                    <!-- Fila de carga (se eliminará cuando lleguen los datos) -->
+                    <tr id="fila-carga">
+                        <td colspan="5" class="py-8 text-center text-pink-500 font-medium">
+                            Cargando clientes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Mensaje de estado por si no hay datos o hay error -->
+        <div id="mensaje-estado" class="hidden text-center py-6 text-gray-500"></div>
 
-                <!-- Tipo Documento (Requerido) -->
-                <div>
-                    <label for="Tipo_Documento" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento <span class="text-red-500">*</span></label>
-                    <select id="Tipo_Documento" name="Tipo Documento" required class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Seleccione una opción...</option>
-                        <option value="CC">Cédula de Ciudadanía</option>
-                        <option value="NIT">NIT</option>
-                        <option value="CE">Cédula de Extranjería</option>
-                        <option value="TI">Tarjeta de Identidad</option>
-                        <option value="Pasaporte">Pasaporte</option>
-                    </select>
-                </div>
-
-                <!-- Documento -->
-                <div>
-                    <label for="Documento" class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
-                    <input type="text" id="Documento" name="Documento" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <!-- Correo -->
-                <div>
-                    <label for="Correo" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-                    <input type="email" id="Correo" name="Correo" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <!-- Teléfono -->
-                <div>
-                    <label for="Telefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                    <input type="number" id="Telefono" name="Telefono" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <!-- Tipo Persona -->
-                <div>
-                    <label for="TipoPersona" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Persona</label>
-                    <select id="TipoPersona" name="TipoPersona" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Seleccione una opción...</option>
-                        <!-- IMPORTANTE: El 'value' debe ser el ID de TblTipoPersona -->
-                        <option value="1">Persona Natural</option>
-                        <option value="2">Persona Jurídica</option>
-                    </select>
-                </div>
-
-                <!-- Ocupación -->
-                <div>
-                    <label for="Ocupacion" class="block text-sm font-medium text-gray-700 mb-1">Ocupación</label>
-                    <input type="text" id="Ocupacion" name="Ocupacion" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <!-- PS_Dian -->
-                <div>
-                    <label for="PS_Dian" class="block text-sm font-medium text-gray-700 mb-1">PS DIAN</label>
-                    <input type="text" id="PS_Dian" name="PS_Dian" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
-
-            <!-- Botones de acción -->
-            <div class="mt-8 flex justify-end space-x-4 border-t pt-4">
-                <button type="reset" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-200">Limpiar</button>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200">Guardar Cliente</button>
-            </div>
-        </form>
     </div>
 
-    <!-- Importar el cliente de Supabase -->
+    <!-- 1. Importar el cliente de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // Configura tus credenciales de Supabase
+        // 2. Configura tus credenciales de Supabase
+        // RECUERDA PONER TUS CREDENCIALES REALES AQUÍ TAMBIÉN
         const supabaseUrl = 'TU_URL_DE_SUPABASE'; 
         const supabaseKey = 'TU_CLAVE_ANON_PUBLICA';
         
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Manejar el evento del formulario
-        document.getElementById('form-cliente').addEventListener('submit', async function(event) {
-            event.preventDefault(); 
+        // 3. Función para formatear fechas
+        function formatearFecha(fechaIso) {
+            const fecha = new Date(fechaIso);
+            return fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
 
-            // Cambiar el texto del botón mientras guarda
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerText;
-            submitBtn.innerText = 'Guardando...';
-            submitBtn.disabled = true;
+        // 4. Función para cargar los datos
+        async function cargarClientes() {
+            const tbody = document.getElementById('tabla-clientes');
+            const filaCarga = document.getElementById('fila-carga');
+            const mensajeEstado = document.getElementById('mensaje-estado');
 
-            // Obtener los datos del formulario
-            const formData = new FormData(this);
-            
-            // Construir el objeto con los nombres exactos de las columnas en BD (Se eliminó TipoCliente)
-            const clienteData = {
-                Nombres: formData.get('Nombres') || null,
-                Apellido: formData.get('Apellido') || null,
-                "Tipo Documento": formData.get('Tipo Documento'), 
-                Documento: formData.get('Documento') || null,
-                Correo: formData.get('Correo') || null,
-                Telefono: formData.get('Telefono') ? parseInt(formData.get('Telefono')) : null,
-                TipoPersona: formData.get('TipoPersona') ? parseInt(formData.get('TipoPersona')) : null,
-                Ocupacion: formData.get('Ocupacion') || null,
-                PS_Dian: formData.get('PS_Dian') || null
-            };
+            try {
+                // Hacer la consulta a Supabase ordenando por los más recientes
+                const { data, error } = await supabase
+                    .from('TblCliente')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            // Insertar en Supabase
-            const { data, error } = await supabase
-                .from('TblCliente')
-                .insert([clienteData]);
+                if (error) throw error;
 
-            // Restaurar botón
-            submitBtn.innerText = originalBtnText;
-            submitBtn.disabled = false;
+                // Eliminar el mensaje de "Cargando..."
+                if (filaCarga) filaCarga.remove();
 
-            if (error) {
-                console.error('Error al guardar:', error);
-                alert('Hubo un error al guardar el cliente: ' + error.message);
-            } else {
-                alert('Cliente guardado exitosamente');
-                this.reset(); 
+                if (data.length === 0) {
+                    mensajeEstado.textContent = "Aún no hay clientes registrados.";
+                    mensajeEstado.classList.remove('hidden');
+                    return;
+                }
+
+                // Generar las filas de la tabla dinámicamente
+                data.forEach(cliente => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-pink-50 transition duration-150";
+
+                    // Manejo de valores nulos o vacíos
+                    const nombres = cliente.Nombres || '';
+                    const apellidos = cliente.Apellido || '';
+                    const nombreCompleto = `${nombres} ${apellidos}`.trim() || 'Sin nombre';
+                    const tipoDoc = cliente['Tipo Documento'] || '';
+                    const numDoc = cliente.Documento || 'N/A';
+                    const correo = cliente.Correo || 'Sin correo';
+                    const telefono = cliente.Telefono || 'Sin teléfono';
+                    const ocupacion = cliente.Ocupacion || '-';
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 text-sm text-gray-800 font-medium">${nombreCompleto}</td>
+                        <td class="py-3 px-4 text-sm text-gray-600">
+                            <span class="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded mr-1">${tipoDoc}</span> 
+                            ${numDoc}
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-600">
+                            <div>${correo}</div>
+                            <div class="text-xs text-gray-400 mt-1">${telefono}</div>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-600">${ocupacion}</td>
+                        <td class="py-3 px-4 text-sm text-gray-500">${formatearFecha(cliente.created_at)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                console.error("Error al cargar clientes:", err);
+                if (filaCarga) filaCarga.remove();
+                mensajeEstado.textContent = "Ocurrió un error al cargar la información: " + err.message;
+                mensajeEstado.classList.remove('hidden');
+                mensajeEstado.classList.add('text-red-500');
             }
-        });
+        }
+
+        // 5. Ejecutar la función cuando la página cargue
+        document.addEventListener('DOMContentLoaded', cargarClientes);
     </script>
 </body>
 </html>
