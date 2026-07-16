@@ -57,7 +57,7 @@
                     <input type="number" id="Telefono" name="Telefono" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <!-- Tipo Persona (Modificado a Select) -->
+                <!-- Tipo Persona -->
                 <div>
                     <label for="TipoPersona" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Persona</label>
                     <select id="TipoPersona" name="TipoPersona" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -65,18 +65,6 @@
                         <!-- IMPORTANTE: El 'value' debe ser el ID de TblTipoPersona -->
                         <option value="1">Persona Natural</option>
                         <option value="2">Persona Jurídica</option>
-                    </select>
-                </div>
-
-                <!-- Tipo Cliente (Modificado a Select) -->
-                <div>
-                    <label for="TipoCliente" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Cliente</label>
-                    <select id="TipoCliente" name="TipoCliente" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Seleccione una opción...</option>
-                        <!-- IMPORTANTE: El 'value' debe ser el ID correspondiente en tu BD -->
-                        <option value="1">Cliente Frecuente</option>
-                        <option value="2">Cliente Mayorista</option>
-                        <option value="3">Cliente Esporádico</option>
                     </select>
                 </div>
 
@@ -124,7 +112,7 @@
             // Obtener los datos del formulario
             const formData = new FormData(this);
             
-            // Construir el objeto con los nombres exactos de las columnas en BD
+            // Construir el objeto con los nombres exactos de las columnas en BD (Se eliminó TipoCliente)
             const clienteData = {
                 Nombres: formData.get('Nombres') || null,
                 Apellido: formData.get('Apellido') || null,
@@ -133,7 +121,6 @@
                 Correo: formData.get('Correo') || null,
                 Telefono: formData.get('Telefono') ? parseInt(formData.get('Telefono')) : null,
                 TipoPersona: formData.get('TipoPersona') ? parseInt(formData.get('TipoPersona')) : null,
-                TipoCliente: formData.get('TipoCliente') ? parseInt(formData.get('TipoCliente')) : null,
                 Ocupacion: formData.get('Ocupacion') || null,
                 PS_Dian: formData.get('PS_Dian') || null
             };
