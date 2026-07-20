@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContaSav</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --rosa:#D6336C;
+    --rosa-oscuro:#8F1B47;
+    --rosa-suave:#FBE4EC;
+    --rosa-linea:#EFC7D6;
+    --papel:#FFF9F7;
+    --tarjeta:#FFFFFF;
+    --tinta:#2B1622;
+    --tinta-suave:#7A6570;
+    --exito:#2F7A57;
+    --error:#B3261E;
+    --radio:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--papel);
+    color:var(--tinta);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  .oculto{display:none !important;}
+
+  /* ---------- marca ---------- */
+  .marca{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+  }
+
+  /* ============ PANTALLA DE ENTRADA ============ */
+  #pantalla-entrada{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    background:
+      repeating-linear-gradient(180deg, transparent, transparent 38px, var(--rosa-linea) 39px, transparent 40px),
+      var(--papel);
+  }
+  #pantalla-entrada::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0; left:64px;
+    width:2px;
+    background:repeating-linear-gradient(180deg, var(--rosa) 0 10px, transparent 10px 18px);
+    opacity:.55;
+  }
+  .sello{
+    text-align:center;
+    padding:64px 56px;
+    background:var(--tarjeta);
+    border:2px solid var(--tinta);
+    border-radius:4px;
+    box-shadow:10px 10px 0 var(--rosa);
+    max-width:420px;
+    margin:0 24px;
+  }
+  .sello-anillo{
+    width:88px;height:88px;
+    margin:0 auto 20px;
+    border:3px solid var(--rosa);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transform:rotate(-6deg);
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:34px;
+    color:var(--rosa);
+  }
+  .sello h1{
+    font-size:40px;
+    margin:0 0 6px;
+    letter-spacing:.5px;
+  }
+  .sello p.tagline{
+    margin:0 0 32px;
+    color:var(--tinta-suave);
+    font-size:15px;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+  }
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    border:none;
+    cursor:pointer;
+    border-radius:8px;
+    padding:13px 28px;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .btn-primario{
+    background:var(--rosa);
+    color:#fff;
+    box-shadow:0 3px 0 var(--rosa-oscuro);
+  }
+  .btn-primario:hover{background:var(--rosa-oscuro);}
+  .btn-secundario{
+    background:transparent;
+    color:var(--tinta);
+    border:1.5px solid var(--tinta);
+  }
+  .btn-secundario:hover{background:var(--tinta);color:#fff;}
+  .btn-texto{
+    background:none;border:none;color:var(--rosa-oscuro);
+    font-weight:600;cursor:pointer;font-size:14px;
+    text-decoration:underline;text-underline-offset:3px;
+  }
+
+  /* ============ ENCABEZADO GENERAL ============ */
+  header.app-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 40px;
+    border-bottom:2px solid var(--tinta);
+    background:var(--tarjeta);
+  }
+  header.app-header .marca{
+    font-size:22px;
+    color:var(--tinta);
+  }
+  header.app-header .marca span{color:var(--rosa);}
+  .app-header .subt{
+    font-size:12px;
+    color:var(--tinta-suave);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-top:2px;
+  }
+
+  main{max-width:1100px;margin:0 auto;padding:32px 40px 80px;}
+
+  /* ============ VISTA CLIENTES ============ */
+  .barra-acciones{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+  }
+  .buscador{
+    flex:1;
+    min-width:220px;
+    display:flex;
+    align-items:center;
+    background:var(--tarjeta);
+    border:1.5px solid var(--rosa-linea);
+    border-radius:8px;
+    padding:0 14px;
+  }
+  .buscador input{
+    border:none;outline:none;padding:11px 8px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    width:100%;
+    background:transparent;
+  }
+
+  .ficha-tabla{
+    background:var(--tarjeta);
+    border:1.5px solid var(--rosa-linea);
+    border-radius:var(--radio);
+    overflow:hidden;
+  }
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    color:var(--tinta-suave);
+    background:var(--rosa-suave);
+    padding:12px 16px;
+    border-bottom:1.5px solid var(--rosa-linea);
+  }
+  tbody td{
+    padding:14px 16px;
+    font-size:14px;
+    border-bottom:1px solid #F4E4EA;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FFFAFB;}
+  td.mono, .mono{font-family:'IBM Plex Mono', monospace; font-size:13px;}
+  .etiqueta-tipo{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--rosa-suave);
+    color:var(--rosa-oscuro);
+    font-size:12px;
+    font-weight:600;
+  }
+  .btn-fila{
+    background:none;border:1.5px solid var(--tinta);
+    color:var(--tinta);
+    border-radius:6px;
+    padding:6px 12px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn-fila:hover{background:var(--tinta);color:#fff;}
+  .estado-vacio, .estado-carga{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--tinta-suave);
+  }
+  .estado-vacio strong{display:block;color:var(--tinta);font-size:17px;margin-bottom:6px;font-family:'Fraunces', serif;}
+
+  /* ============ PANEL FORMULARIO (drawer) ============ */
+  #fondo-panel{
+    position:fixed; inset:0;
+    background:rgba(43,22,34,.45);
+    display:flex; justify-content:flex-end;
+    z-index:50;
+  }
+  #panel-form{
+    width:min(460px, 100%);
+    background:var(--papel);
+    height:100%;
+    overflow-y:auto;
+    border-left:2px solid var(--tinta);
+    padding:32px 32px 40px;
+    animation:entrarPanel .22s ease-out;
+  }
+  @keyframes entrarPanel{from{transform:translateX(24px);opacity:0;} to{transform:translateX(0);opacity:1;}}
+  #panel-form h2{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    margin:0 0 4px;
+  }
+  #panel-form .ficha-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--rosa-oscuro);
+    margin-bottom:24px;
+  }
+  .campo{margin-bottom:16px;}
+  .campo label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--tinta-suave);
+    margin-bottom:6px;
+  }
+  .campo input, .campo select{
+    width:100%;
+    padding:10px 12px;
+    border:1.5px solid var(--rosa-linea);
+    border-radius:7px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    background:var(--tarjeta);
+    color:var(--tinta);
+  }
+  .campo input:focus, .campo select:focus{
+    outline:2px solid var(--rosa);
+    outline-offset:1px;
+    border-color:var(--rosa);
+  }
+  .fila-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .acciones-form{
+    display:flex;gap:12px;margin-top:28px;
+    position:sticky; bottom:0; background:var(--papel); padding-top:8px;
+  }
+  #mensaje-form{
+    font-size:13px;
+    margin-top:14px;
+    padding:10px 12px;
+    border-radius:7px;
+    display:none;
+  }
+  #mensaje-form.visible{display:block;}
+  #mensaje-form.ok{background:#E6F2EC;color:var(--exito);}
+  #mensaje-form.err{background:#FBEAE8;color:var(--error);}
+
+  footer.pie{
+    text-align:center;
+    padding:20px;
+    font-size:11px;
+    color:var(--tinta-suave);
+    letter-spacing:.4px;
+  }
+
+  @media (max-width:640px){
+    main{padding:24px 18px 60px;}
+    header.app-header{padding:16px 20px;}
+    .sello{padding:48px 28px;}
+    .fila-2{grid-template-columns:1fr;}
+    .ficha-tabla{overflow-x:auto;}
+    table{min-width:640px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ PANTALLA DE ENTRADA ============ -->
+<section id="pantalla-entrada">
+  <div class="sello">
+    <div class="sello-anillo">CS</div>
+    <h1 class="marca">ContaSav</h1>
+    <p class="tagline">Gestión contable de clientes</p>
+    <button class="btn btn-primario" id="btn-entrar" disabled>Cargando…</button>
+  </div>
+</section>
+
+<!-- ============ VISTA DE CLIENTES ============ -->
+<div id="pantalla-clientes" class="oculto">
+  <header class="app-header">
+    <div>
+      <div class="marca">Conta<span>Sav</span></div>
+      <div class="subt">Clientes</div>
+    </div>
+    <button class="btn btn-primario" id="btn-nuevo-cliente">+ Nuevo cliente</button>
+  </header>
+
+  <main>
+    <div class="barra-acciones">
+      <div class="buscador">
+        <input type="text" id="input-buscar" placeholder="Buscar por nombre, apellido o documento...">
+      </div>
+    </div>
+
+    <div class="ficha-tabla">
+      <div id="estado-carga" class="estado-carga">Cargando clientes…</div>
+      <table id="tabla-clientes" class="oculto">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Tipo de persona</th>
+            <th>Teléfono</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla"></tbody>
+      </table>
+      <div id="estado-vacio" class="estado-vacio oculto">
+        <strong>Todavía no hay clientes</strong>
+        Crea el primero con el botón "Nuevo cliente".
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">ContaSav — panel interno de gestión de clientes</footer>
+</div>
+
+<!-- ============ PANEL FORMULARIO ============ -->
+<div id="fondo-panel" class="oculto">
+  <div id="panel-form">
+    <h2 id="titulo-form">Nuevo cliente</h2>
+    <div class="ficha-num" id="ficha-num"></div>
+
+    <form id="form-cliente">
+      <div class="fila-2">
+        <div class="campo">
+          <label for="f-nombres">Nombres</label>
+          <input type="text" id="f-nombres" required>
+        </div>
+        <div class="campo">
+          <label for="f-apellido">Apellido</label>
+          <input type="text" id="f-apellido">
+        </div>
+      </div>
+
+      <div class="fila-2">
+        <div class="campo">
+          <label for="f-tipo-documento">Tipo de documento</label>
+          <select id="f-tipo-documento"><option value="">—</option></select>
+        </div>
+        <div class="campo">
+          <label for="f-documento">Documento</label>
+          <input type="text" id="f-documento">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="f-fecha-exped">Fecha de expedición</label>
+        <input type="date" id="f-fecha-exped">
+      </div>
+
+      <div class="campo">
+        <label for="f-tipo-persona">Tipo de persona</label>
+        <select id="f-tipo-persona"><option value="">—</option></select>
+      </div>
+
+      <div class="fila-2">
+        <div class="campo">
+          <label for="f-correo">Correo</label>
+          <input type="email" id="f-correo">
+        </div>
+        <div class="campo">
+          <label for="f-telefono">Teléfono</label>
+          <input type="tel" id="f-telefono">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="f-ocupacion">Ocupación</label>
+        <input type="text" id="f-ocupacion">
+      </div>
+
+      <div class="campo">
+        <label for="f-ps-dian">PS Dian</label>
+        <input type="text" id="f-ps-dian">
+      </div>
+
+      <div id="mensaje-form"></div>
+
+      <div class="acciones-form">
+        <button type="submit" class="btn btn-primario" id="btn-guardar">Guardar cliente</button>
+        <button type="button" class="btn-texto" id="btn-cancelar-form">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // =====================================================================
+  // CONFIGURACIÓN DE SUPABASE
+  // La URL y la anon key NO están escritas aquí: se piden a una
+  // Cloudflare Pages Function (/functions/api/config.js) que lee las
+  // variables de entorno configuradas en el proyecto de Cloudflare.
+  // =====================================================================
+  let sb = null;
+
+  async function iniciarSupabase() {
+    const btnEntrar = document.getElementById('btn-entrar');
+    try {
+      const resp = await fetch('/api/config');
+      if (!resp.ok) throw new Error('respuesta ' + resp.status);
+      const cfg = await resp.json();
+      if (!cfg.url || !cfg.anonKey) throw new Error('faltan variables de entorno');
+      sb = supabase.createClient(cfg.url, cfg.anonKey);
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = 'Entrar';
+    } catch (err) {
+      console.error('No se pudo cargar la configuración de Supabase:', err);
+      btnEntrar.textContent = 'Error de configuración';
+    }
+  }
+  iniciarSupabase();
+
+  // Estado en memoria
+  let clientes = [];
+  let tiposPersona = [];
+  let tiposDocumento = [];
+  let idEnEdicion = null;
+
+  // -------- navegación entre pantallas --------
+  document.getElementById('btn-entrar').addEventListener('click', () => {
+    document.getElementById('pantalla-entrada').classList.add('oculto');
+    document.getElementById('pantalla-clientes').classList.remove('oculto');
+    cargarCatalogos();
+    cargarClientes();
+  });
+
+  // -------- carga de catálogos (para los <select>) --------
+  async function cargarCatalogos() {
+    const [rp, rd] = await Promise.all([
+      sb.from('TbltipoPersona').select('id, TipoPersona'),
+      sb.from('TbltipoDocumento').select('id, TipoDoc')
+    ]);
+    tiposPersona = rp.data || [];
+    tiposDocumento = rd.data || [];
+
+    const selPersona = document.getElementById('f-tipo-persona');
+    tiposPersona.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.id; op.textContent = t.TipoPersona;
+      selPersona.appendChild(op);
+    });
+
+    const selDoc = document.getElementById('f-tipo-documento');
+    tiposDocumento.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.id; op.textContent = t.TipoDoc;
+      selDoc.appendChild(op);
+    });
+  }
+
+  function nombreTipoPersona(id) {
+    const t = tiposPersona.find(x => String(x.id) === String(id));
+    return t ? t.TipoPersona : '—';
+  }
+
+  // -------- carga y render de clientes --------
+  async function cargarClientes() {
+    document.getElementById('estado-carga').classList.remove('oculto');
+    document.getElementById('tabla-clientes').classList.add('oculto');
+    document.getElementById('estado-vacio').classList.add('oculto');
+
+    const { data, error } = await sb
+      .from('vista_clientes')
+      .select('*')
+      .order('Apellido', { ascending: true });
+
+    document.getElementById('estado-carga').classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      document.getElementById('estado-vacio').classList.remove('oculto');
+      document.getElementById('estado-vacio').innerHTML =
+        '<strong>No se pudieron cargar los clientes</strong>' + error.message;
+      return;
+    }
+
+    clientes = data || [];
+    renderTabla(clientes);
+  }
+
+  function renderTabla(lista) {
+    const cuerpo = document.getElementById('cuerpo-tabla');
+    cuerpo.innerHTML = '';
+
+    if (!lista.length) {
+      document.getElementById('estado-vacio').classList.remove('oculto');
+      document.getElementById('tabla-clientes').classList.add('oculto');
+      return;
+    }
+    document.getElementById('estado-vacio').classList.add('oculto');
+    document.getElementById('tabla-clientes').classList.remove('oculto');
+
+    lista.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${c.Nombres || '—'}</td>
+        <td>${c.Apellido || '—'}</td>
+        <td><span class="etiqueta-tipo">${c.tipo_persona || '—'}</span></td>
+        <td class="mono">${c.Telefono ?? '—'}</td>
+        <td><button class="btn-fila" data-id="${c.id}">Editar</button></td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+
+    cuerpo.querySelectorAll('.btn-fila').forEach(btn => {
+      btn.addEventListener('click', () => abrirFormulario(btn.dataset.id));
+    });
+  }
+
+  document.getElementById('input-buscar').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const filtrado = clientes.filter(c =>
+      (c.Nombres || '').toLowerCase().includes(q) ||
+      (c.Apellido || '').toLowerCase().includes(q)
+    );
+    renderTabla(filtrado);
+  });
+
+  // -------- abrir / cerrar panel formulario --------
+  document.getElementById('btn-nuevo-cliente').addEventListener('click', () => abrirFormulario(null));
+  document.getElementById('btn-cancelar-form').addEventListener('click', cerrarFormulario);
+  document.getElementById('fondo-panel').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel') cerrarFormulario();
+  });
+
+  async function abrirFormulario(id) {
+    const form = document.getElementById('form-cliente');
+    form.reset();
+    ocultarMensaje();
+    idEnEdicion = id || null;
+
+    if (id) {
+      document.getElementById('titulo-form').textContent = 'Editar cliente';
+      document.getElementById('ficha-num').textContent = 'Cargando ficha…';
+      document.getElementById('fondo-panel').classList.remove('oculto');
+
+      // La vista de la tabla no trae todos los campos del formulario,
+      // así que se busca el registro completo directo en TblCliente.
+      const { data: c, error } = await sb
+        .from('TblCliente')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error || !c) {
+        console.error(error);
+        mostrarMensaje('No se pudo cargar la información del cliente.', 'err');
+        return;
+      }
+
+      document.getElementById('ficha-num').textContent = 'Ficha N.º ' + c.id;
+      document.getElementById('f-nombres').value = c.Nombres || '';
+      document.getElementById('f-apellido').value = c.Apellido || '';
+      document.getElementById('f-tipo-documento').value = c.TipoDocumento || '';
+      document.getElementById('f-documento').value = c.Documento || '';
+      document.getElementById('f-fecha-exped').value = c.FechaExped || '';
+      document.getElementById('f-tipo-persona').value = c.TipoPersona || '';
+      document.getElementById('f-correo').value = c.Correo || '';
+      document.getElementById('f-telefono').value = c.Telefono ?? '';
+      document.getElementById('f-ocupacion').value = c.Ocupacion || '';
+      document.getElementById('f-ps-dian').value = c.PS_Dian || '';
+    } else {
+      document.getElementById('titulo-form').textContent = 'Nuevo cliente';
+      document.getElementById('ficha-num').textContent = 'Cliente nuevo';
+      document.getElementById('fondo-panel').classList.remove('oculto');
+    }
+  }
+
+  function cerrarFormulario() {
+    document.getElementById('fondo-panel').classList.add('oculto');
+  }
+
+  function mostrarMensaje(texto, tipo) {
+    const el = document.getElementById('mensaje-form');
+    el.textContent = texto;
+    el.className = 'visible ' + tipo;
+  }
+  function ocultarMensaje() {
+    const el = document.getElementById('mensaje-form');
+    el.className = '';
+  }
+
+  // -------- guardar (crear o actualizar) --------
+  document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    const telefonoRaw = document.getElementById('f-telefono').value.trim();
+
+    const payload = {
+      Nombres: document.getElementById('f-nombres').value.trim() || null,
+      Apellido: document.getElementById('f-apellido').value.trim() || null,
+      TipoDocumento: document.getElementById('f-tipo-documento').value || null,
+      Documento: document.getElementById('f-documento').value.trim() || null,
+      FechaExped: document.getElementById('f-fecha-exped').value || null,
+      TipoPersona: document.getElementById('f-tipo-persona').value || null,
+      Correo: document.getElementById('f-correo').value.trim() || null,
+      Telefono: telefonoRaw ? Number(telefonoRaw) : null,
+      Ocupacion: document.getElementById('f-ocupacion').value.trim() || null,
+      PS_Dian: document.getElementById('f-ps-dian').value.trim() || null,
+    };
+
+    let error;
+    if (idEnEdicion) {
+      ({ error } = await sb.from('TblCliente').update(payload).eq('id', idEnEdicion));
+    } else {
+      ({ error } = await sb.from('TblCliente').insert(payload));
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Guardar cliente';
+
+    if (error) {
+      console.error(error);
+      mostrarMensaje('No se pudo guardar: ' + error.message, 'err');
+      return;
+    }
+
+    mostrarMensaje('Cliente guardado correctamente.', 'ok');
+    await cargarClientes();
+    setTimeout(cerrarFormulario, 600);
+  });
+</script>
+</body>
+</html>
