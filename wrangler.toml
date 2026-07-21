@@ -8,3 +8,4 @@ main = "worker.js"
 # Carpeta donde esta tu index.html (la raiz del proyecto)
 directory = "."
 binding = "ASSETS"
+keep_vars = true
