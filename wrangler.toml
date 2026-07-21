@@ -1,11 +1,8 @@
 name = "contasav"
 compatibility_date = "2026-07-16"
-
-# Script del Worker: sirve los archivos estaticos y ademas responde /api/config
 main = "worker.js"
+keep_vars = true
 
 [assets]
-# Carpeta donde esta tu index.html (la raiz del proyecto)
 directory = "."
 binding = "ASSETS"
-keep_vars = true
