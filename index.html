@@ -1,0 +1,3454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContaSav</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --rosa:#D6336C;
+    --rosa-oscuro:#8F1B47;
+    --rosa-suave:#FBE4EC;
+    --rosa-linea:#EFC7D6;
+    --papel:#FFF9F7;
+    --tarjeta:#FFFFFF;
+    --tinta:#2B1622;
+    --tinta-suave:#7A6570;
+    --exito:#2F7A57;
+    --error:#B3261E;
+    --radio:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--papel);
+    color:var(--tinta);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  .oculto{display:none !important;}
+
+  /* ---------- marca ---------- */
+  .marca{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+  }
+
+  /* ============ PANTALLA DE ENTRADA ============ */
+  #pantalla-entrada{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    background:
+      repeating-linear-gradient(180deg, transparent, transparent 38px, var(--rosa-linea) 39px, transparent 40px),
+      var(--papel);
+  }
+  #pantalla-entrada::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0; left:64px;
+    width:2px;
+    background:repeating-linear-gradient(180deg, var(--rosa) 0 10px, transparent 10px 18px);
+    opacity:.55;
+  }
+  .sello{
+    text-align:center;
+    padding:56px 48px;
+    background:var(--tarjeta);
+    border:2px solid var(--tinta);
+    border-radius:4px;
+    box-shadow:10px 10px 0 var(--rosa);
+    max-width:440px;
+    width:100%;
+    margin:0 24px;
+  }
+  .sello form, .sello #bloque-recuperar, .sello #bloque-nueva-password{
+    text-align:left;
+    margin-top:8px;
+  }
+  .sello #btn-entrar{width:100%;margin-top:4px;}
+  .sello #btn-enviar-recuperacion, .sello #btn-guardar-nueva-password{width:100%;margin-top:4px;}
+  .sello .btn-texto{display:block;margin:12px auto 0;text-align:center;}
+  .mensaje-inline{
+    font-size:13px;
+    margin:10px 0;
+    padding:10px 12px;
+    border-radius:7px;
+    display:none;
+    text-align:left;
+  }
+  .mensaje-inline.visible{display:block;}
+  .mensaje-inline.ok{background:#E6F2EC;color:var(--exito);}
+  .mensaje-inline.err{background:#FBEAE8;color:var(--error);}
+
+  /* ============ FORMULARIO PÚBLICO: CUESTIONARIO DE RENTA ============ */
+  .contenedor-formulario-publico{
+    max-width:720px;
+    margin:0 auto;
+    padding:48px 24px 100px;
+  }
+  .encabezado-formulario-publico{
+    text-align:center;
+    margin-bottom:8px;
+    padding-bottom:28px;
+    border-bottom:2px solid var(--tinta);
+  }
+  .encabezado-formulario-publico .marca{font-size:22px;margin-bottom:14px;}
+  .encabezado-formulario-publico .marca span{color:var(--rosa);}
+  .encabezado-formulario-publico h1{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    margin:0 0 8px;
+  }
+  .opciones-si-no{display:flex;gap:20px;margin:10px 0;}
+  .opciones-si-no label{
+    display:flex;align-items:center;gap:6px;
+    font-size:14px;font-weight:500;cursor:pointer;
+    padding:8px 16px;
+    border:1.5px solid var(--rosa-linea);
+    border-radius:8px;
+  }
+  .opciones-si-no input[type="radio"]{accent-color:var(--rosa);width:16px;height:16px;}
+  .campo-condicional{
+    margin-top:14px;
+    padding:16px;
+    background:var(--rosa-suave);
+    border-radius:8px;
+  }
+  .tabla-dinamica{border:none;padding:0;margin:0;}
+  .fila-dinamica{
+    display:grid;
+    gap:10px;
+    padding:14px;
+    background:var(--rosa-suave);
+    border-radius:8px;
+    margin-bottom:10px;
+    position:relative;
+  }
+  .fila-dinamica .btn-quitar-fila{
+    position:absolute;top:8px;right:8px;
+    border:none;background:none;color:var(--error);
+    font-size:12px;font-weight:600;cursor:pointer;
+    padding:4px 8px;
+  }
+  .btn-agregar-fila{
+    background:none;
+    border:1.5px dashed var(--rosa);
+    color:var(--rosa-oscuro);
+    border-radius:8px;
+    padding:10px;
+    width:100%;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .grilla-situaciones{border-collapse:collapse;width:100%;}
+  .grilla-situaciones td{padding:10px 6px;font-size:13.5px;border-bottom:1px solid var(--rosa-linea);}
+  .grilla-situaciones td:last-child, .grilla-situaciones td:nth-last-child(2){text-align:center;width:56px;}
+  .grilla-situaciones input[type="radio"]{accent-color:var(--rosa);width:16px;height:16px;}
+  .check-declaracion{
+    display:flex;gap:10px;align-items:flex-start;
+    font-size:13.5px;
+    background:var(--rosa-suave);
+    padding:14px;border-radius:8px;
+    cursor:pointer;
+  }
+  .check-declaracion input{margin-top:2px;accent-color:var(--rosa);width:16px;height:16px;flex-shrink:0;}
+
+  .btn-icono-ajustes{
+    width:38px;height:38px;
+    border-radius:8px;
+    border:1.5px solid var(--rosa-linea);
+    background:var(--tarjeta);
+    font-size:16px;
+    cursor:pointer;
+  }
+  .btn-icono-ajustes:hover{background:var(--rosa-suave);}
+
+  /* ---------- modal chico (configuración) ---------- */
+  #fondo-panel-config{
+    position:fixed; inset:0;
+    background:rgba(43,22,34,.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:60;
+    padding:24px;
+  }
+  #panel-config{
+    width:100%;
+    max-width:380px;
+    background:var(--papel);
+    border:2px solid var(--tinta);
+    border-radius:14px;
+    padding:28px 28px 32px;
+  }
+  #panel-config h2{
+    font-family:'Fraunces', serif;
+    font-size:22px;
+    margin:0 0 18px;
+  }
+
+  /* ---------- detalle de cuestionario (solo lectura) ---------- */
+  .detalle-seccion{padding:14px 0;border-top:1px dashed var(--rosa-linea);}
+  .detalle-seccion:first-child{border-top:none;padding-top:0;}
+  .detalle-seccion h4{
+    font-family:'Fraunces', serif;
+    font-size:14px;
+    margin:0 0 8px;
+    color:var(--rosa-oscuro);
+  }
+  .detalle-item{font-size:13px;margin-bottom:4px;line-height:1.5;}
+  .detalle-item strong{color:var(--tinta);}
+  .detalle-vacio{font-size:12.5px;color:var(--tinta-suave);font-style:italic;}
+  .sello-anillo{
+    width:88px;height:88px;
+    margin:0 auto 20px;
+    border:3px solid var(--rosa);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transform:rotate(-6deg);
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:34px;
+    color:var(--rosa);
+  }
+  .sello h1{
+    font-size:40px;
+    margin:0 0 6px;
+    letter-spacing:.5px;
+  }
+  .sello p.tagline{
+    margin:0 0 32px;
+    color:var(--tinta-suave);
+    font-size:15px;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+  }
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    border:none;
+    cursor:pointer;
+    border-radius:8px;
+    padding:13px 28px;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .btn-primario{
+    background:var(--rosa);
+    color:#fff;
+    box-shadow:0 3px 0 var(--rosa-oscuro);
+  }
+  .btn-primario:hover{background:var(--rosa-oscuro);}
+  .btn-secundario{
+    background:transparent;
+    color:var(--tinta);
+    border:1.5px solid var(--tinta);
+  }
+  .btn-secundario:hover{background:var(--tinta);color:#fff;}
+  .btn-texto{
+    background:none;border:none;color:var(--rosa-oscuro);
+    font-weight:600;cursor:pointer;font-size:14px;
+    text-decoration:underline;text-underline-offset:3px;
+  }
+
+  /* ============ ENCABEZADO GENERAL ============ */
+  header.app-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 40px;
+    border-bottom:2px solid var(--tinta);
+    background:var(--tarjeta);
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header.app-header .marca{
+    font-size:22px;
+    color:var(--tinta);
+  }
+  header.app-header .marca span{color:var(--rosa);}
+  .app-header .subt{
+    font-size:12px;
+    color:var(--tinta-suave);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-top:2px;
+  }
+
+  /* ---------- navegación por pestañas ---------- */
+  .tabs-nav{
+    display:flex;
+    gap:6px;
+    background:var(--rosa-suave);
+    padding:4px;
+    border-radius:9px;
+  }
+  .tab-nav{
+    border:none;
+    background:transparent;
+    padding:8px 16px;
+    border-radius:6px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--rosa-oscuro);
+    cursor:pointer;
+  }
+  .tab-nav.activo{
+    background:var(--tinta);
+    color:#fff;
+  }
+  .tab-nav:not(.activo):hover{background:#F6D4E1;}
+  .badge-alertas{
+    display:inline-block;
+    margin-left:6px;
+    background:var(--error);
+    color:#fff;
+    font-size:10.5px;
+    font-weight:700;
+    padding:1px 6px;
+    border-radius:10px;
+    vertical-align:middle;
+  }
+
+  /* ---------- etiquetas de notificación en Alertas ---------- */
+  .etiqueta-notificacion{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .etiqueta-notificacion.vencida{background:#FBEAE8;color:var(--error);}
+  .etiqueta-notificacion.vence-hoy{background:#FDECC8;color:#8A5A00;}
+  .etiqueta-notificacion.proxima-a-vencer{background:var(--rosa-suave);color:var(--rosa-oscuro);}
+
+  main{max-width:1100px;margin:0 auto;padding:32px 40px 80px;}
+
+  /* ============ VISTA CLIENTES ============ */
+  .barra-acciones{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+  }
+  .filtros{display:flex;gap:10px;flex-wrap:wrap;}
+  .filtros select{
+    padding:10px 12px;
+    border:1.5px solid var(--rosa-linea);
+    border-radius:8px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    background:var(--tarjeta);
+    color:var(--tinta);
+  }
+  .filtros select:focus{outline:2px solid var(--rosa);outline-offset:1px;}
+  .contador-registros{
+    font-size:12.5px;
+    color:var(--tinta-suave);
+    margin:-10px 0 14px;
+    font-weight:500;
+  }
+  .buscador{
+    flex:1;
+    min-width:220px;
+    display:flex;
+    align-items:center;
+    background:var(--tarjeta);
+    border:1.5px solid var(--rosa-linea);
+    border-radius:8px;
+    padding:0 14px;
+  }
+  .buscador input{
+    border:none;outline:none;padding:11px 8px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    width:100%;
+    background:transparent;
+  }
+
+  .ficha-tabla{
+    background:var(--tarjeta);
+    border:1.5px solid var(--rosa-linea);
+    border-radius:var(--radio);
+    overflow:hidden;
+  }
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    color:var(--tinta-suave);
+    background:var(--rosa-suave);
+    padding:12px 16px;
+    border-bottom:1.5px solid var(--rosa-linea);
+  }
+  tbody td{
+    padding:14px 16px;
+    font-size:14px;
+    border-bottom:1px solid #F4E4EA;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FFFAFB;}
+  td.mono, .mono{font-family:'IBM Plex Mono', monospace; font-size:13px;}
+  .etiqueta-tipo{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--rosa-suave);
+    color:var(--rosa-oscuro);
+    font-size:12px;
+    font-weight:600;
+  }
+  .btn-fila{
+    background:none;border:1.5px solid var(--tinta);
+    color:var(--tinta);
+    border-radius:6px;
+    padding:6px 12px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn-fila:hover{background:var(--tinta);color:#fff;}
+  .celda-acciones{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn-fila-venc{border-color:var(--rosa);color:var(--rosa-oscuro);}
+  .btn-fila-venc:hover{background:var(--rosa);color:#fff;}
+  .btn-fila-eliminar{border-color:var(--error);color:var(--error);}
+  .btn-fila-eliminar:hover{background:var(--error);color:#fff;}
+
+  /* ============ PANEL VENCIMIENTOS ============ */
+  #panel-venc h2, #panel-archivos-decl h2, #panel-cuest h2{
+    font-family:'Fraunces', serif;
+    font-size:24px;
+    margin:0 0 4px;
+  }
+  #panel-venc .ficha-num, #panel-archivos-decl .ficha-num, #panel-cuest .ficha-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--rosa-oscuro);
+    margin-bottom:24px;
+  }
+  .lista-vencimientos{list-style:none;margin:0;padding:0;}
+  .item-vencimiento{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:14px 0;
+    border-bottom:1px dashed var(--rosa-linea);
+  }
+  .item-vencimiento:last-child{border-bottom:none;}
+  .item-vencimiento .nombre-impuesto{
+    font-weight:600;
+    font-size:14px;
+  }
+  .item-vencimiento .fecha-vence{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    background:var(--rosa-suave);
+    color:var(--rosa-oscuro);
+    padding:4px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+
+  /* ---------- checklist de impuestos (form declaración) ---------- */
+  .lista-checks{
+    border:1.5px solid var(--rosa-linea);
+    border-radius:8px;
+    padding:6px 12px;
+    max-height:180px;
+    overflow-y:auto;
+    background:var(--tarjeta);
+  }
+  .lista-checks .texto-ayuda{
+    font-size:13px;
+    color:var(--tinta-suave);
+    margin:8px 0;
+  }
+  .item-check{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px dashed var(--rosa-linea);
+    font-size:13.5px;
+  }
+  .item-check:last-child{border-bottom:none;}
+  .item-check input{width:16px;height:16px;accent-color:var(--rosa);flex-shrink:0;}
+  .item-check .fecha-vence-chip{
+    margin-left:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--tinta-suave);
+    white-space:nowrap;
+  }
+  .item-check .fecha-vence-chip.vencido{
+    color:var(--error);
+    font-weight:600;
+  }
+  .item-check .badge-vencido{
+    background:#FBEAE8;
+    color:var(--error);
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    padding:2px 7px;
+    border-radius:10px;
+    margin-left:8px;
+  }
+
+  /* ---------- archivos adjuntos ---------- */
+  .texto-ayuda-caja{
+    font-size:13px;
+    color:var(--tinta-suave);
+    background:var(--rosa-suave);
+    padding:12px 14px;
+    border-radius:8px;
+  }
+  .dropzone-archivos{
+    border:2px dashed var(--rosa-linea);
+    border-radius:10px;
+    padding:22px 16px;
+    text-align:center;
+    cursor:pointer;
+    transition:background .12s ease, border-color .12s ease;
+  }
+  .dropzone-archivos:hover, .dropzone-archivos.arrastrando{
+    background:var(--rosa-suave);
+    border-color:var(--rosa);
+  }
+  .dropzone-archivos p{
+    margin:0;
+    font-size:13px;
+    color:var(--tinta-suave);
+  }
+  .dropzone-archivos p strong{color:var(--rosa-oscuro);}
+  .dropzone-archivos input[type="file"]{display:none;}
+  .lista-archivos{list-style:none;margin:14px 0 0;padding:0;}
+  .item-archivo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 0;
+    border-bottom:1px dashed var(--rosa-linea);
+    font-size:13.5px;
+  }
+  .item-archivo:last-child{border-bottom:none;}
+  .icono-archivo{
+    flex-shrink:0;
+    width:34px;height:34px;
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10.5px;
+    font-weight:700;
+    color:#fff;
+    letter-spacing:.2px;
+  }
+  .icono-archivo.pdf{background:#C43D3D;}
+  .icono-archivo.xls{background:#1E7A46;}
+  .icono-archivo.otro{background:var(--tinta-suave);}
+  .info-archivo{flex:1;min-width:0;}
+  .info-archivo .nombre-archivo{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-weight:500;
+  }
+  .info-archivo .fecha-archivo{
+    display:block;
+    font-size:11.5px;
+    color:var(--tinta-suave);
+    font-family:'IBM Plex Mono', monospace;
+    margin-top:1px;
+  }
+  .item-archivo .acciones-archivo{display:flex;gap:6px;flex-shrink:0;}
+  .item-archivo button{
+    border:none;
+    background:none;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .item-archivo .btn-descargar{background:var(--rosa-suave);color:var(--rosa-oscuro);}
+  .item-archivo .btn-eliminar-archivo{background:#FBEAE8;color:var(--error);}
+
+  /* ---------- botones toggle pagado / no pagado ---------- */
+  .btn-toggle{
+    width:100%;
+    padding:10px 12px;
+    border-radius:7px;
+    border:1.5px solid var(--rosa-linea);
+    background:var(--tarjeta);
+    color:var(--tinta-suave);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .btn-toggle.pagado{
+    background:var(--exito);
+    border-color:var(--exito);
+    color:#fff;
+  }
+
+  /* ---------- etiquetas de estado en tabla de declaraciones ---------- */
+  .etiqueta-estado{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .etiqueta-estado.pendiente{background:#FDECC8;color:#8A5A00;}
+  .etiqueta-estado.presentada{background:#DCEBFA;color:#1B5A8C;}
+  .etiqueta-estado.vencida{background:#FBEAE8;color:var(--error);}
+  .etiqueta-estado.borrador{background:#EFEAF5;color:#5B3E8C;}
+  .etiqueta-estado.terminada{background:#E6F2EC;color:var(--exito);}
+  .celda-pago-btn{
+    border:none;background:none;cursor:pointer;
+    font-size:12px;font-weight:600;
+    padding:4px 10px;border-radius:20px;
+  }
+  .celda-pago-btn.si{background:#E6F2EC;color:var(--exito);}
+  .celda-pago-btn.no{background:#FBEAE8;color:var(--error);}
+
+  .estado-vacio, .estado-carga{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--tinta-suave);
+  }
+  .estado-vacio strong{display:block;color:var(--tinta);font-size:17px;margin-bottom:6px;font-family:'Fraunces', serif;}
+
+  /* ============ PANEL FORMULARIO (drawer) ============ */
+  #fondo-panel, #fondo-panel-venc, #fondo-panel-archivos-decl{
+    position:fixed; inset:0;
+    background:rgba(43,22,34,.45);
+    display:flex; justify-content:flex-end;
+    z-index:50;
+  }
+  #panel-form, .panel-lateral{
+    width:min(460px, 100%);
+    background:var(--papel);
+    height:100%;
+    overflow-y:auto;
+    border-left:2px solid var(--tinta);
+    padding:32px 32px 40px;
+    animation:entrarPanel .22s ease-out;
+  }
+  @keyframes entrarPanel{from{transform:translateX(24px);opacity:0;} to{transform:translateX(0);opacity:1;}}
+
+  /* ============ MODAL DECLARACIÓN (centrado, más ancho) ============ */
+  #fondo-panel-decl{
+    position:fixed; inset:0;
+    background:rgba(43,22,34,.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:50;
+    padding:24px;
+  }
+  #panel-decl{
+    width:100%;
+    max-width:720px;
+    max-height:calc(100vh - 48px);
+    overflow-y:auto;
+    background:var(--papel);
+    border:2px solid var(--tinta);
+    border-radius:14px;
+    padding:36px 40px 40px;
+    animation:entrarModal .18s ease-out;
+  }
+  @keyframes entrarModal{from{transform:scale(.97);opacity:0;} to{transform:scale(1);opacity:1;}}
+  .form-seccion{
+    padding:20px 0;
+    border-top:1px dashed var(--rosa-linea);
+  }
+  .form-seccion:first-of-type{border-top:none;padding-top:0;}
+  .form-seccion h3{
+    font-family:'Fraunces', serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 14px;
+    color:var(--rosa-oscuro);
+  }
+  #panel-decl h2{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    margin:0 0 4px;
+  }
+  #panel-decl .ficha-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--rosa-oscuro);
+    margin-bottom:20px;
+  }
+  #panel-form h2{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    margin:0 0 4px;
+  }
+  #panel-form .ficha-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--rosa-oscuro);
+    margin-bottom:24px;
+  }
+  .campo{margin-bottom:16px;}
+  .campo label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--tinta-suave);
+    margin-bottom:6px;
+  }
+  .campo input, .campo select{
+    width:100%;
+    padding:10px 12px;
+    border:1.5px solid var(--rosa-linea);
+    border-radius:7px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    background:var(--tarjeta);
+    color:var(--tinta);
+  }
+  .campo input:focus, .campo select:focus{
+    outline:2px solid var(--rosa);
+    outline-offset:1px;
+    border-color:var(--rosa);
+  }
+  .fila-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .acciones-form{
+    display:flex;gap:12px;margin-top:28px;
+    position:sticky; bottom:0; background:var(--papel); padding-top:8px;
+  }
+  #mensaje-form{
+    font-size:13px;
+    margin-top:14px;
+    padding:10px 12px;
+    border-radius:7px;
+    display:none;
+  }
+  #mensaje-form.visible{display:block;}
+  #mensaje-form.ok{background:#E6F2EC;color:var(--exito);}
+  #mensaje-form.err{background:#FBEAE8;color:var(--error);}
+
+  footer.pie{
+    text-align:center;
+    padding:20px;
+    font-size:11px;
+    color:var(--tinta-suave);
+    letter-spacing:.4px;
+  }
+
+  @media (max-width:640px){
+    main{padding:24px 18px 60px;}
+    header.app-header{padding:16px 20px;}
+    .sello{padding:48px 28px;}
+    .fila-2{grid-template-columns:1fr;}
+    .ficha-tabla{overflow-x:auto;}
+    table{min-width:640px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ PANTALLA DE ENTRADA ============ -->
+<section id="pantalla-entrada">
+  <div class="sello">
+    <div class="sello-anillo">CS</div>
+    <h1 class="marca">ContaSav</h1>
+    <p class="tagline">Gestión contable de clientes</p>
+
+    <form id="form-login" class="oculto">
+      <div class="campo">
+        <label for="login-correo">Correo</label>
+        <input type="email" id="login-correo" required autocomplete="username">
+      </div>
+      <div class="campo">
+        <label for="login-password">Contraseña</label>
+        <input type="password" id="login-password" required autocomplete="current-password">
+      </div>
+      <div id="login-mensaje" class="mensaje-inline"></div>
+      <button type="submit" class="btn btn-primario" id="btn-entrar" disabled>Cargando…</button>
+      <button type="button" class="btn-texto" id="btn-olvide-password">¿Olvidaste tu contraseña?</button>
+    </form>
+
+    <div id="bloque-recuperar" class="oculto">
+      <p class="tagline">Te enviaremos un enlace para recuperar el acceso.</p>
+      <div class="campo">
+        <label for="recuperar-correo">Correo</label>
+        <input type="email" id="recuperar-correo" required>
+      </div>
+      <div id="recuperar-mensaje" class="mensaje-inline"></div>
+      <button type="button" class="btn btn-primario" id="btn-enviar-recuperacion">Enviar enlace</button>
+      <button type="button" class="btn-texto" id="btn-cancelar-recuperar">Volver</button>
+    </div>
+
+    <div id="bloque-nueva-password" class="oculto">
+      <p class="tagline">Define tu nueva contraseña.</p>
+      <div class="campo">
+        <label for="nueva-password">Nueva contraseña</label>
+        <input type="password" id="nueva-password" required minlength="6">
+      </div>
+      <div class="campo">
+        <label for="confirmar-nueva-password">Confirmar contraseña</label>
+        <input type="password" id="confirmar-nueva-password" required minlength="6">
+      </div>
+      <div id="nueva-password-mensaje" class="mensaje-inline"></div>
+      <button type="button" class="btn btn-primario" id="btn-guardar-nueva-password">Guardar contraseña</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FORMULARIO PÚBLICO: CUESTIONARIO DE RENTA ============ -->
+<div id="pantalla-formulario-renta" class="oculto">
+  <div class="contenedor-formulario-publico">
+    <div class="encabezado-formulario-publico">
+      <div class="marca">Conta<span>Sav</span></div>
+      <h1>Cuestionario para la elaboración de la declaración de renta</h1>
+    </div>
+
+    <form id="form-cuestionario-renta">
+      <div class="form-seccion">
+        <h3>Datos iniciales</h3>
+        <div class="campo">
+          <label for="cr-nombre">Nombre del declarante</label>
+          <input type="text" id="cr-nombre" required>
+        </div>
+        <div class="fila-2">
+          <div class="campo">
+            <label for="cr-tipo-doc">Tipo de documento</label>
+            <select id="cr-tipo-doc" required><option value="">Selecciona</option></select>
+          </div>
+          <div class="campo">
+            <label for="cr-num-doc">No. de documento</label>
+            <input type="text" id="cr-num-doc" required>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="cr-confirmar-doc">Confirmar número de documento</label>
+          <input type="text" id="cr-confirmar-doc" required>
+        </div>
+        <div class="fila-2">
+          <div class="campo">
+            <label for="cr-telefono">Teléfono</label>
+            <input type="tel" id="cr-telefono" required>
+          </div>
+          <div class="campo">
+            <label for="cr-correo">Correo electrónico</label>
+            <input type="email" id="cr-correo" required>
+          </div>
+        </div>
+        <div id="cr-mensaje-documento" class="mensaje-inline"></div>
+      </div>
+
+      <div class="form-seccion">
+        <h3>Instrucciones</h3>
+        <p class="texto-ayuda-caja">Marque la respuesta correspondiente. Si responde "Sí", describa brevemente la información solicitada. Una vez revisado este cuestionario, se le solicitarán únicamente los documentos necesarios para elaborar su declaración de renta.</p>
+      </div>
+
+      <!-- 1 -->
+      <div class="form-seccion">
+        <h3 id="cr-p1-titulo">1. ¿Durante el año salió del país?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p1" value="si" class="radio-condicional" data-target="p1-condicional"> Sí</label>
+          <label><input type="radio" name="p1" value="no" class="radio-condicional" data-target="p1-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p1-condicional">
+          <div class="fila-2">
+            <div class="campo"><label for="p1-pais">País</label><input type="text" id="p1-pais"></div>
+            <div class="campo"><label for="p1-tiempo">Tiempo por fuera de Colombia</label><input type="text" id="p1-tiempo"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 -->
+      <div class="form-seccion">
+        <h3 id="cr-p2-titulo">2. Durante el año recibió ingresos por:</h3>
+        <div class="lista-checks">
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Salarios"><span>Salarios</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Honorarios"><span>Honorarios</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Servicios"><span>Servicios</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Arrendamientos"><span>Arrendamientos</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Pensión"><span>Pensión</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Dividendos"><span>Dividendos</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Rendimientos financieros"><span>Rendimientos financieros</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Venta de bienes"><span>Venta de bienes</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Herencias o donaciones"><span>Herencias o donaciones</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Rifas, premios o loterías"><span>Rifas, premios o loterías</span></label>
+          <label class="item-check"><input type="checkbox" name="ingresos" value="Otros" id="cr-ingresos-otros"><span>Otros</span></label>
+        </div>
+        <div class="campo-condicional oculto" id="ingresos-otros-condicional">
+          <div class="campo"><label for="cr-ingresos-otros-desc">Si marcó "Otros", describa</label><input type="text" id="cr-ingresos-otros-desc"></div>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="form-seccion">
+        <h3>3. ¿Tiene Certificados de Depósito a Término (CDT)?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p3" value="si" class="radio-condicional" data-target="p3-condicional"> Sí</label>
+          <label><input type="radio" name="p3" value="no" class="radio-condicional" data-target="p3-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p3-condicional">
+          <div class="campo"><label for="p3-entidades">Indique la(s) entidad(es)</label><input type="text" id="p3-entidades"></div>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <div class="form-seccion">
+        <h3>4. ¿Posee inversiones (acciones, fondos de inversión, bonos o similares)?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p4" value="si" class="radio-condicional" data-target="p4-condicional"> Sí</label>
+          <label><input type="radio" name="p4" value="no" class="radio-condicional" data-target="p4-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p4-condicional">
+          <div class="campo"><label for="p4-cuales">¿Cuáles?</label><input type="text" id="p4-cuales"></div>
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div class="form-seccion">
+        <h3>5. ¿Posee criptoactivos (Bitcoin, Ethereum u otras criptomonedas)?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p5" value="si" class="radio-condicional" data-target="p5-condicional"> Sí</label>
+          <label><input type="radio" name="p5" value="no" class="radio-condicional" data-target="p5-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p5-condicional">
+          <div class="campo"><label for="p5-cuales">¿Cuáles?</label><input type="text" id="p5-cuales"></div>
+        </div>
+      </div>
+
+      <!-- 6 -->
+      <div class="form-seccion">
+        <h3>6. ¿Tiene activos o inversiones en el exterior?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p6" value="si" class="radio-condicional" data-target="p6-condicional"> Sí</label>
+          <label><input type="radio" name="p6" value="no" class="radio-condicional" data-target="p6-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p6-condicional">
+          <div class="fila-2">
+            <div class="campo"><label for="p6-activo">Activo</label><input type="text" id="p6-activo"></div>
+            <div class="campo"><label for="p6-pais">País</label><input type="text" id="p6-pais"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <div class="form-seccion">
+        <h3>7. ¿Es propietario(a) de bienes inmuebles?</h3>
+        <p class="texto-ayuda-caja">Nota: Relacione únicamente los inmuebles que estén registrados legalmente a su nombre, total o parcialmente.</p>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p7" value="si" class="radio-condicional" data-target="p7-condicional"> Sí</label>
+          <label><input type="radio" name="p7" value="no" class="radio-condicional" data-target="p7-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p7-condicional">
+          <div class="tabla-dinamica" id="cr-inmuebles-lista"></div>
+          <button type="button" class="btn-agregar-fila" id="btn-agregar-inmueble">+ Agregar otro inmueble</button>
+        </div>
+      </div>
+
+      <!-- 8 -->
+      <div class="form-seccion">
+        <h3>8. ¿Posee vehículos, motocicletas u otro vehículo registrados a su nombre?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p8" value="si" class="radio-condicional" data-target="p8-condicional"> Sí</label>
+          <label><input type="radio" name="p8" value="no" class="radio-condicional" data-target="p8-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p8-condicional">
+          <div class="campo"><label for="p8-cuales">¿Cuáles?</label><input type="text" id="p8-cuales"></div>
+        </div>
+      </div>
+
+      <!-- 9 -->
+      <div class="form-seccion">
+        <h3>9. ¿Tiene dinero prestado a otras personas (cuentas por cobrar)?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p9" value="si" class="radio-condicional" data-target="p9-condicional"> Sí</label>
+          <label><input type="radio" name="p9" value="no" class="radio-condicional" data-target="p9-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p9-condicional">
+          <div class="campo"><label for="p9-total">Total del dinero prestado</label><input type="number" step="0.01" min="0" id="p9-total"></div>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="form-seccion">
+        <h3 id="cr-p10-titulo">10. ¿Tiene deudas o préstamos pendientes con personas al 31 de diciembre?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p10" value="si" class="radio-condicional" data-target="p10-condicional"> Sí</label>
+          <label><input type="radio" name="p10" value="no" class="radio-condicional" data-target="p10-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p10-condicional">
+          <div class="campo"><label for="p10-total">Total del dinero adeudado</label><input type="number" step="0.01" min="0" id="p10-total"></div>
+        </div>
+      </div>
+
+      <!-- 11 -->
+      <div class="form-seccion">
+        <h3>11. ¿Tiene crédito de vivienda?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p11" value="si"> Sí</label>
+          <label><input type="radio" name="p11" value="no" checked> No</label>
+        </div>
+      </div>
+
+      <!-- 12 -->
+      <div class="form-seccion">
+        <h3>12. ¿Pagó medicina prepagada o pólizas de salud?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p12" value="si" class="radio-condicional" data-target="p12-condicional"> Sí</label>
+          <label><input type="radio" name="p12" value="no" class="radio-condicional" data-target="p12-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p12-condicional">
+          <label class="texto-ayuda-caja" style="display:block;margin-bottom:8px;">¿Para quién?</label>
+          <div class="lista-checks">
+            <label class="item-check"><input type="checkbox" name="medicina-para" value="Usted"><span>Usted</span></label>
+            <label class="item-check"><input type="checkbox" name="medicina-para" value="Cónyuge"><span>Cónyuge</span></label>
+            <label class="item-check"><input type="checkbox" name="medicina-para" value="Hijos"><span>Hijos</span></label>
+            <label class="item-check"><input type="checkbox" name="medicina-para" value="Padres"><span>Padres</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13 -->
+      <div class="form-seccion">
+        <h3>13. ¿Tiene dependientes económicos?</h3>
+        <p class="texto-ayuda-caja">Se consideran dependientes económicos los hijos, cónyuge, padres u otros familiares que dependen económicamente del declarante, conforme al artículo 387 del Estatuto Tributario.</p>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p13" value="si" class="radio-condicional" data-target="p13-condicional"> Sí</label>
+          <label><input type="radio" name="p13" value="no" class="radio-condicional" data-target="p13-condicional" checked> No</label>
+        </div>
+        <div class="campo-condicional oculto" id="p13-condicional">
+          <div class="tabla-dinamica" id="cr-dependientes-lista"></div>
+          <button type="button" class="btn-agregar-fila" id="btn-agregar-dependiente">+ Agregar otro dependiente</button>
+        </div>
+      </div>
+
+      <!-- 14 -->
+      <div class="form-seccion">
+        <h3>14. ¿Realizó aportes voluntarios a pensión o cuentas AFC?</h3>
+        <div class="opciones-si-no">
+          <label><input type="radio" name="p14" value="si"> Sí</label>
+          <label><input type="radio" name="p14" value="no" checked> No</label>
+        </div>
+      </div>
+
+      <!-- 15 -->
+      <div class="form-seccion">
+        <h3 id="cr-p15-titulo">15. ¿Durante el año ocurrió alguna de las siguientes situaciones?</h3>
+        <table class="grilla-situaciones">
+          <tbody id="cr-situaciones-grilla"></tbody>
+        </table>
+      </div>
+
+      <!-- 16 -->
+      <div class="form-seccion">
+        <h3>16. Información adicional</h3>
+        <div class="campo">
+          <label for="cr-info-adicional">¿Hay algo más que consideres importante para tu declaración de renta?</label>
+          <textarea id="cr-info-adicional" rows="4" style="width:100%;padding:10px 12px;border:1.5px solid var(--rosa-linea);border-radius:7px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Declaración -->
+      <div class="form-seccion">
+        <h3>Declaración del cliente</h3>
+        <p class="texto-ayuda-caja">Declaro bajo la gravedad de juramento que la información suministrada en este cuestionario es veraz y completa, y que seré responsable de cualquier inconsistencia u omisión frente a la Dian.</p>
+        <label class="check-declaracion">
+          <input type="checkbox" id="cr-acepta-declaracion" required>
+          <span>Acepto y declaro que la información suministrada es veraz y completa.</span>
+        </label>
+      </div>
+
+      <div id="cr-mensaje" class="mensaje-inline"></div>
+
+      <div class="acciones-form">
+        <button type="submit" class="btn btn-primario" id="btn-enviar-cuestionario">Enviar cuestionario</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ CONFIRMACIÓN DE ENVÍO ============ -->
+<div id="pantalla-formulario-gracias" class="oculto">
+  <div class="contenedor-formulario-publico" style="text-align:center;">
+    <div class="marca">Conta<span>Sav</span></div>
+    <h1 style="font-family:'Fraunces', serif; font-size:30px; margin-top:24px;">¡Gracias!</h1>
+    <p class="tagline" style="text-transform:none; letter-spacing:normal; font-size:15px;">Hemos recibido tu información correctamente. Nuestro equipo la revisará y te contactaremos si necesitamos algún documento adicional.</p>
+  </div>
+</div>
+
+<!-- ============ VISTA DE CLIENTES ============ -->
+<div id="pantalla-clientes" class="oculto">
+  <header class="app-header">
+    <div>
+      <div class="marca">Conta<span>Sav</span></div>
+      <div class="subt">Clientes</div>
+    </div>
+    <nav class="tabs-nav">
+      <button class="tab-nav activo" data-target="clientes">Clientes</button>
+      <button class="tab-nav" data-target="vencimientos">Vencimientos</button>
+      <button class="tab-nav" data-target="declaraciones">Declaraciones</button>
+      <button class="tab-nav" data-target="alertas">Alertas<span class="badge-alertas oculto" id="badge-alertas-1"></span></button>
+      <button class="tab-nav" data-target="cuestionarios">Cuestionarios</button>
+    </nav>
+    <button class="btn btn-primario" id="btn-nuevo-cliente">+ Nuevo cliente</button>
+    <button class="btn-icono-ajustes btn-abrir-config" title="Configuración">⚙</button>
+    <button class="btn-texto btn-cerrar-sesion">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div class="barra-acciones">
+      <div class="buscador">
+        <input type="text" id="input-buscar" placeholder="Buscar por nombre, apellido o documento...">
+      </div>
+    </div>
+    <div class="contador-registros" id="contador-clientes"></div>
+
+    <div class="ficha-tabla">
+      <div id="estado-carga" class="estado-carga">Cargando clientes…</div>
+      <table id="tabla-clientes" class="oculto">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Tipo de persona</th>
+            <th>Teléfono</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla"></tbody>
+      </table>
+      <div id="estado-vacio" class="estado-vacio oculto">
+        <strong>Todavía no hay clientes</strong>
+        Crea el primero con el botón "Nuevo cliente".
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">ContaSav — panel interno de gestión de clientes</footer>
+</div>
+
+<!-- ============ VISTA DE VENCIMIENTOS ============ -->
+<div id="pantalla-vencimientos" class="oculto">
+  <header class="app-header">
+    <div>
+      <div class="marca">Conta<span>Sav</span></div>
+      <div class="subt">Vencimientos</div>
+    </div>
+    <nav class="tabs-nav">
+      <button class="tab-nav" data-target="clientes">Clientes</button>
+      <button class="tab-nav activo" data-target="vencimientos">Vencimientos</button>
+      <button class="tab-nav" data-target="declaraciones">Declaraciones</button>
+      <button class="tab-nav" data-target="alertas">Alertas<span class="badge-alertas oculto" id="badge-alertas-2"></span></button>
+      <button class="tab-nav" data-target="cuestionarios">Cuestionarios</button>
+    </nav>
+    <button class="btn btn-secundario" id="btn-actualizar-venc">↻ Actualizar</button>
+    <button class="btn-icono-ajustes btn-abrir-config" title="Configuración">⚙</button>
+    <button class="btn-texto btn-cerrar-sesion">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div class="barra-acciones">
+      <div class="buscador">
+        <input type="text" id="input-buscar-venc" placeholder="Buscar por nombre o apellido...">
+      </div>
+      <div class="filtros">
+        <select id="filtro-impuesto">
+          <option value="">Todos los impuestos</option>
+        </select>
+        <select id="filtro-tipo-persona">
+          <option value="">Todos los tipos de persona</option>
+        </select>
+        <select id="filtro-agendar">
+          <option value="">Agendar: todos</option>
+          <option value="si">Agendar: sí</option>
+          <option value="no">Agendar: no</option>
+        </select>
+      </div>
+    </div>
+    <div class="contador-registros" id="contador-vencimientos"></div>
+
+    <div class="ficha-tabla">
+      <div id="venc-general-carga" class="estado-carga">Cargando vencimientos…</div>
+      <table id="tabla-vencimientos-general" class="oculto">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Impuesto</th>
+            <th>Fecha de vencimiento</th>
+            <th>Agendar declaración</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla-vencimientos"></tbody>
+      </table>
+      <div id="venc-general-vacio" class="estado-vacio oculto">
+        <strong>No hay vencimientos para mostrar</strong>
+        Ajusta los filtros o confirma que el calendario tenga datos cargados.
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">ContaSav — panel interno de gestión de clientes</footer>
+</div>
+
+<!-- ============ VISTA DE DECLARACIONES ============ -->
+<div id="pantalla-declaraciones" class="oculto">
+  <header class="app-header">
+    <div>
+      <div class="marca">Conta<span>Sav</span></div>
+      <div class="subt">Declaraciones</div>
+    </div>
+    <nav class="tabs-nav">
+      <button class="tab-nav" data-target="clientes">Clientes</button>
+      <button class="tab-nav" data-target="vencimientos">Vencimientos</button>
+      <button class="tab-nav activo" data-target="declaraciones">Declaraciones</button>
+      <button class="tab-nav" data-target="alertas">Alertas<span class="badge-alertas oculto" id="badge-alertas-3"></span></button>
+      <button class="tab-nav" data-target="cuestionarios">Cuestionarios</button>
+    </nav>
+    <button class="btn btn-primario" id="btn-nueva-declaracion">+ Nueva declaración</button>
+    <button class="btn-icono-ajustes btn-abrir-config" title="Configuración">⚙</button>
+    <button class="btn-texto btn-cerrar-sesion">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div class="barra-acciones">
+      <div class="buscador">
+        <input type="text" id="input-buscar-decl" placeholder="Buscar por cliente...">
+      </div>
+      <div class="filtros">
+        <select id="filtro-decl-estado">
+          <option value="">Todos los estados (Dian)</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Presentada">Presentada</option>
+          <option value="Vencida">Vencida</option>
+        </select>
+        <select id="filtro-decl-estado-contador">
+          <option value="">Todos (Contador)</option>
+          <option value="Borrador">Borrador</option>
+          <option value="Terminada">Terminada</option>
+        </select>
+      </div>
+    </div>
+    <div class="contador-registros" id="contador-declaraciones"></div>
+
+    <div class="ficha-tabla">
+      <div id="decl-estado-carga" class="estado-carga">Cargando declaraciones…</div>
+      <table id="tabla-declaraciones" class="oculto">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Periodo</th>
+            <th>Impuestos</th>
+            <th>Estado Dian</th>
+            <th>Contador</th>
+            <th>Valor cobrado</th>
+            <th>Pagado contador</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla-declaraciones"></tbody>
+      </table>
+      <div id="decl-estado-vacio" class="estado-vacio oculto">
+        <strong>Todavía no hay declaraciones</strong>
+        Crea la primera con el botón "Nueva declaración".
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">ContaSav — panel interno de gestión de clientes</footer>
+</div>
+
+<!-- ============ VISTA DE ALERTAS ============ -->
+<div id="pantalla-alertas" class="oculto">
+  <header class="app-header">
+    <div>
+      <div class="marca">Conta<span>Sav</span></div>
+      <div class="subt">Alertas</div>
+    </div>
+    <nav class="tabs-nav">
+      <button class="tab-nav" data-target="clientes">Clientes</button>
+      <button class="tab-nav" data-target="vencimientos">Vencimientos</button>
+      <button class="tab-nav" data-target="declaraciones">Declaraciones</button>
+      <button class="tab-nav activo" data-target="alertas">Alertas<span class="badge-alertas oculto" id="badge-alertas-4"></span></button>
+      <button class="tab-nav" data-target="cuestionarios">Cuestionarios</button>
+    </nav>
+    <button class="btn btn-secundario" id="btn-actualizar-alertas">↻ Actualizar</button>
+    <button class="btn-icono-ajustes btn-abrir-config" title="Configuración">⚙</button>
+    <button class="btn-texto btn-cerrar-sesion">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div class="contador-registros" id="contador-alertas"></div>
+
+    <div class="ficha-tabla">
+      <div id="alertas-estado-carga" class="estado-carga">Buscando alertas…</div>
+      <table id="tabla-alertas" class="oculto">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Impuesto</th>
+            <th>Fecha de vencimiento</th>
+            <th>Días</th>
+            <th>Notificación</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla-alertas"></tbody>
+      </table>
+      <div id="alertas-estado-vacio" class="estado-vacio oculto">
+        <strong>No hay alertas pendientes</strong>
+        Todo lo marcado como "Agendar: Sí" está al día o fuera del rango de 5 días.
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">ContaSav — panel interno de gestión de clientes</footer>
+</div>
+
+<!-- ============ VISTA DE CUESTIONARIOS ============ -->
+<div id="pantalla-cuestionarios" class="oculto">
+  <header class="app-header">
+    <div>
+      <div class="marca">Conta<span>Sav</span></div>
+      <div class="subt">Cuestionarios</div>
+    </div>
+    <nav class="tabs-nav">
+      <button class="tab-nav" data-target="clientes">Clientes</button>
+      <button class="tab-nav" data-target="vencimientos">Vencimientos</button>
+      <button class="tab-nav" data-target="declaraciones">Declaraciones</button>
+      <button class="tab-nav" data-target="alertas">Alertas<span class="badge-alertas oculto" id="badge-alertas-5"></span></button>
+      <button class="tab-nav activo" data-target="cuestionarios">Cuestionarios</button>
+    </nav>
+    <button class="btn-icono-ajustes btn-abrir-config" title="Configuración">⚙</button>
+    <button class="btn-texto btn-cerrar-sesion">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <div class="barra-acciones">
+      <div class="buscador">
+        <input type="text" id="input-buscar-cuest" placeholder="Buscar por nombre o documento...">
+      </div>
+    </div>
+    <div class="contador-registros" id="contador-cuestionarios"></div>
+
+    <div class="ficha-tabla">
+      <div id="cuest-estado-carga" class="estado-carga">Cargando cuestionarios…</div>
+      <table id="tabla-cuestionarios" class="oculto">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Documento</th>
+            <th>Teléfono</th>
+            <th>Enviado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla-cuestionarios"></tbody>
+      </table>
+      <div id="cuest-estado-vacio" class="estado-vacio oculto">
+        <strong>Todavía no hay cuestionarios recibidos</strong>
+        Comparte el link del formulario con tus clientes para que empiecen a llegar respuestas.
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">ContaSav — panel interno de gestión de clientes</footer>
+</div>
+
+<!-- ============ PANEL DETALLE DE CUESTIONARIO ============ -->
+<div id="fondo-panel-cuest" class="oculto">
+  <div id="panel-cuest" class="panel-lateral">
+    <h2>Detalle del cuestionario</h2>
+    <div class="ficha-num" id="cuest-detalle-nombre"></div>
+    <div id="cuest-detalle-contenido"></div>
+    <div class="acciones-form">
+      <button type="button" class="btn-texto" id="btn-cerrar-cuest">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PANEL CONFIGURACIÓN ============ -->
+<div id="fondo-panel-config" class="oculto">
+  <div id="panel-config">
+    <h2>Configuración</h2>
+    <div class="campo">
+      <label for="config-anio-gravable">Año gravable actual</label>
+      <input type="number" id="config-anio-gravable">
+    </div>
+    <div id="config-mensaje" class="mensaje-inline"></div>
+    <div class="acciones-form">
+      <button type="button" class="btn btn-primario" id="btn-guardar-config">Guardar</button>
+      <button type="button" class="btn-texto" id="btn-cerrar-config">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PANEL FORMULARIO CLIENTE ============ -->
+<div id="fondo-panel" class="oculto">
+  <div id="panel-form">
+    <h2 id="titulo-form">Nuevo cliente</h2>
+    <div class="ficha-num" id="ficha-num"></div>
+
+    <form id="form-cliente">
+      <div class="fila-2">
+        <div class="campo">
+          <label for="f-nombres">Nombres</label>
+          <input type="text" id="f-nombres" required>
+        </div>
+        <div class="campo">
+          <label for="f-apellido">Apellido</label>
+          <input type="text" id="f-apellido">
+        </div>
+      </div>
+
+      <div class="fila-2">
+        <div class="campo">
+          <label for="f-tipo-documento">Tipo de documento</label>
+          <select id="f-tipo-documento"><option value="">—</option></select>
+        </div>
+        <div class="campo">
+          <label for="f-documento">Documento</label>
+          <input type="text" id="f-documento">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="f-fecha-exped">Fecha de expedición</label>
+        <input type="date" id="f-fecha-exped">
+      </div>
+
+      <div class="campo">
+        <label for="f-tipo-persona">Tipo de persona</label>
+        <select id="f-tipo-persona"><option value="">—</option></select>
+      </div>
+
+      <div class="fila-2">
+        <div class="campo">
+          <label for="f-correo">Correo</label>
+          <input type="email" id="f-correo">
+        </div>
+        <div class="campo">
+          <label for="f-telefono">Teléfono</label>
+          <input type="tel" id="f-telefono">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="f-ocupacion">Ocupación</label>
+        <input type="text" id="f-ocupacion">
+      </div>
+
+      <div class="campo">
+        <label for="f-ps-dian">PS Dian</label>
+        <input type="text" id="f-ps-dian">
+      </div>
+
+      <div id="mensaje-form"></div>
+
+      <div class="acciones-form">
+        <button type="submit" class="btn btn-primario" id="btn-guardar">Guardar cliente</button>
+        <button type="button" class="btn-texto" id="btn-cancelar-form">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ PANEL VENCIMIENTOS ============ -->
+<div id="fondo-panel-venc" class="oculto">
+  <div id="panel-venc" class="panel-lateral">
+    <h2>Vencimientos</h2>
+    <div class="ficha-num" id="venc-nombre-cliente"></div>
+
+    <div id="venc-estado-carga" class="estado-carga">Buscando vencimientos…</div>
+    <div id="venc-estado-vacio" class="estado-vacio oculto">
+      <strong>Sin vencimientos registrados</strong>
+      No hay coincidencia en el calendario para el tipo de persona y documento de este cliente.
+    </div>
+    <ul class="lista-vencimientos oculto" id="lista-vencimientos"></ul>
+
+    <div class="acciones-form">
+      <button type="button" class="btn-texto" id="btn-cerrar-venc">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PANEL FORMULARIO DECLARACIÓN ============ -->
+<div id="fondo-panel-decl" class="oculto">
+  <div id="panel-decl">
+    <h2 id="titulo-form-decl">Nueva declaración</h2>
+    <div class="ficha-num" id="ficha-num-decl"></div>
+
+    <form id="form-declaracion">
+      <div class="form-seccion">
+        <h3>Cliente y periodo</h3>
+        <div class="campo">
+          <label for="fd-cliente">Cliente</label>
+          <select id="fd-cliente" required>
+            <option value="">Selecciona un cliente</option>
+          </select>
+        </div>
+        <div class="fila-2">
+          <div class="campo">
+            <label for="fd-fecha-inicio">Inicio del periodo</label>
+            <input type="date" id="fd-fecha-inicio" required>
+          </div>
+          <div class="campo">
+            <label for="fd-fecha-fin">Fin del periodo</label>
+            <input type="date" id="fd-fecha-fin" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-seccion">
+        <h3>Impuestos a declarar</h3>
+        <div class="campo">
+          <div id="fd-lista-impuestos" class="lista-checks">
+            <p class="texto-ayuda">Selecciona primero un cliente para ver sus impuestos aplicables.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-seccion">
+        <h3>Estado y seguimiento</h3>
+        <div class="fila-2">
+          <div class="campo">
+            <label for="fd-estado">Estado (Dian)</label>
+            <select id="fd-estado">
+              <option value="Pendiente">Pendiente</option>
+              <option value="Presentada">Presentada</option>
+              <option value="Vencida">Vencida</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="fd-estado-contador">Estado (Contador)</label>
+            <select id="fd-estado-contador">
+              <option value="Borrador">Borrador</option>
+              <option value="Terminada">Terminada</option>
+            </select>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="fd-fecha-presentacion">Fecha real de presentación</label>
+          <input type="date" id="fd-fecha-presentacion">
+        </div>
+      </div>
+
+      <div class="form-seccion">
+        <h3>Cobro</h3>
+        <div class="campo">
+          <label for="fd-valor-cobrado">Valor cobrado por la declaración</label>
+          <input type="number" id="fd-valor-cobrado" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="fila-2">
+          <div class="campo">
+            <label>Pagado al contador</label>
+            <button type="button" class="btn-toggle" id="fd-pagado-contador" data-valor="false">No pagado</button>
+          </div>
+          <div class="campo">
+            <label>Pagado a la Dian</label>
+            <button type="button" class="btn-toggle" id="fd-pagado-dian" data-valor="false">No pagado</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-seccion">
+        <h3>Archivos adjuntos</h3>
+        <div class="campo">
+          <div id="fd-archivos-bloqueado" class="texto-ayuda-caja">
+            Guarda la declaración primero para poder adjuntar archivos.
+          </div>
+          <div id="fd-archivos-contenido" class="oculto">
+            <label class="dropzone-archivos" id="fd-dropzone" for="fd-input-archivo">
+              <p><strong>Arrastra archivos aquí</strong> o haz clic para elegirlos</p>
+              <input type="file" id="fd-input-archivo" multiple>
+            </label>
+            <ul class="lista-archivos" id="fd-lista-archivos"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="mensaje-form-decl"></div>
+
+      <div class="acciones-form">
+        <button type="submit" class="btn btn-primario" id="btn-guardar-decl">Guardar declaración</button>
+        <button type="button" class="btn-texto" id="btn-cancelar-decl">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ PANEL ARCHIVOS DE DECLARACIÓN (acceso directo) ============ -->
+<div id="fondo-panel-archivos-decl" class="oculto">
+  <div id="panel-archivos-decl" class="panel-lateral">
+    <h2>Archivos de la declaración</h2>
+    <div class="ficha-num" id="pa-nombre-cliente"></div>
+
+    <label class="dropzone-archivos" id="pa-dropzone" for="pa-input-archivo">
+      <p><strong>Arrastra archivos aquí</strong> o haz clic para elegirlos</p>
+      <input type="file" id="pa-input-archivo" multiple>
+    </label>
+    <ul class="lista-archivos" id="pa-lista-archivos"></ul>
+
+    <div class="acciones-form">
+      <button type="button" class="btn-texto" id="btn-cerrar-archivos-decl">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // =====================================================================
+  // CONFIGURACIÓN DE SUPABASE
+  // La URL y la anon key NO están escritas aquí: se piden a una
+  // Cloudflare Pages Function (/functions/api/config.js) que lee las
+  // variables de entorno configuradas en el proyecto de Cloudflare.
+  // =====================================================================
+  let sb = null;
+  const MODO_FORMULARIO_PUBLICO = new URLSearchParams(window.location.search).get('formulario') === 'renta';
+
+  async function iniciarSupabase() {
+    const formLogin = document.getElementById('form-login');
+    const btnEntrar = document.getElementById('btn-entrar');
+    try {
+      const resp = await fetch('/api/config');
+      if (!resp.ok) throw new Error('respuesta ' + resp.status);
+      const cfg = await resp.json();
+      if (!cfg.url || !cfg.anonKey) throw new Error('faltan variables de entorno');
+      sb = supabase.createClient(cfg.url, cfg.anonKey);
+
+      // Cuando alguien llega desde el correo de "recuperar contraseña",
+      // Supabase dispara este evento antes de que hagamos nada más.
+      sb.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          mostrarBloqueNuevaPassword();
+        }
+      });
+
+      // Si ya había una sesión activa en este navegador, entra directo.
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        entrarAlApp();
+        return;
+      }
+
+      formLogin.classList.remove('oculto');
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = 'Entrar';
+    } catch (err) {
+      console.error('No se pudo cargar la configuración de Supabase:', err);
+      btnEntrar.textContent = 'Error de configuración';
+    }
+  }
+
+  // -------- arranque: formulario público (sin login) o app interna --------
+  async function iniciarModoPublico() {
+    try {
+      const resp = await fetch('/api/config');
+      if (!resp.ok) throw new Error('respuesta ' + resp.status);
+      const cfg = await resp.json();
+      if (!cfg.url || !cfg.anonKey) throw new Error('faltan variables de entorno');
+      sb = supabase.createClient(cfg.url, cfg.anonKey);
+
+      document.getElementById('pantalla-entrada').classList.add('oculto');
+      document.getElementById('pantalla-formulario-renta').classList.remove('oculto');
+
+      await Promise.all([
+        cargarTipoDocumentoParaFormularioPublico(),
+        cargarAnioGravableParaFormularioPublico(),
+      ]);
+      inicializarSituacionesGrilla();
+      inicializarFilaInmueble();
+      inicializarFilaDependiente();
+    } catch (err) {
+      console.error('No se pudo iniciar el formulario público:', err);
+      const cont = document.querySelector('#pantalla-formulario-renta .contenedor-formulario-publico');
+      if (cont) cont.innerHTML = '<p>No se pudo cargar el formulario. Por favor intenta de nuevo más tarde.</p>';
+      document.getElementById('pantalla-formulario-renta').classList.remove('oculto');
+    }
+  }
+
+  if (MODO_FORMULARIO_PUBLICO) {
+    iniciarModoPublico();
+  } else {
+    iniciarSupabase();
+  }
+
+  // Estado en memoria
+  let clientes = [];
+  let tiposPersona = [];
+  let tiposDocumento = [];
+  let tiposImpuesto = [];
+  let vencimientosGenerales = [];
+  let vencimientosGeneralesCargados = false;
+  let declaraciones = [];
+  let declaracionesCargadas = false;
+  let alertas = [];
+  let cuestionarios = [];
+  let cuestionariosCargados = false;
+  let idEnEdicion = null;
+  let idDeclEnEdicion = null;
+
+  // -------- entrar a la app tras un login exitoso (o sesión ya activa) --------
+  function entrarAlApp() {
+    document.getElementById('pantalla-entrada').classList.add('oculto');
+    document.getElementById('pantalla-clientes').classList.remove('oculto');
+    cargarCatalogos();
+    cargarClientes();
+    cargarAlertas(); // se carga siempre al entrar, para que el badge esté al día
+  }
+
+  // -------- login con correo y contraseña --------
+  document.getElementById('form-login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-entrar');
+    const msg = document.getElementById('login-mensaje');
+    msg.className = 'mensaje-inline';
+
+    const correo = document.getElementById('login-correo').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Ingresando…';
+
+    const { error } = await sb.auth.signInWithPassword({ email: correo, password });
+
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+
+    if (error) {
+      msg.textContent = 'Correo o contraseña incorrectos.';
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+
+    entrarAlApp();
+  });
+
+  // -------- recuperar contraseña --------
+  document.getElementById('btn-olvide-password').addEventListener('click', () => {
+    document.getElementById('form-login').classList.add('oculto');
+    document.getElementById('bloque-recuperar').classList.remove('oculto');
+    document.getElementById('recuperar-correo').value = document.getElementById('login-correo').value;
+  });
+
+  document.getElementById('btn-cancelar-recuperar').addEventListener('click', () => {
+    document.getElementById('bloque-recuperar').classList.add('oculto');
+    document.getElementById('form-login').classList.remove('oculto');
+  });
+
+  document.getElementById('btn-enviar-recuperacion').addEventListener('click', async () => {
+    const correo = document.getElementById('recuperar-correo').value.trim();
+    const msg = document.getElementById('recuperar-mensaje');
+    if (!correo) return;
+
+    const btn = document.getElementById('btn-enviar-recuperacion');
+    btn.disabled = true;
+
+    const { error } = await sb.auth.resetPasswordForEmail(correo, {
+      redirectTo: window.location.origin + window.location.pathname,
+    });
+
+    btn.disabled = false;
+
+    if (error) {
+      msg.textContent = 'No se pudo enviar el correo: ' + error.message;
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+    msg.textContent = 'Revisa tu correo para continuar.';
+    msg.className = 'mensaje-inline visible ok';
+  });
+
+  // -------- definir nueva contraseña (llegando desde el correo) --------
+  function mostrarBloqueNuevaPassword() {
+    document.getElementById('form-login').classList.add('oculto');
+    document.getElementById('bloque-recuperar').classList.add('oculto');
+    document.getElementById('bloque-nueva-password').classList.remove('oculto');
+  }
+
+  document.getElementById('btn-guardar-nueva-password').addEventListener('click', async () => {
+    const nueva = document.getElementById('nueva-password').value;
+    const confirmar = document.getElementById('confirmar-nueva-password').value;
+    const msg = document.getElementById('nueva-password-mensaje');
+
+    if (nueva.length < 6) {
+      msg.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+    if (nueva !== confirmar) {
+      msg.textContent = 'Las contraseñas no coinciden.';
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+
+    const btn = document.getElementById('btn-guardar-nueva-password');
+    btn.disabled = true;
+
+    const { error } = await sb.auth.updateUser({ password: nueva });
+
+    btn.disabled = false;
+
+    if (error) {
+      msg.textContent = 'No se pudo actualizar la contraseña: ' + error.message;
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+
+    msg.textContent = 'Contraseña actualizada. Entrando…';
+    msg.className = 'mensaje-inline visible ok';
+    setTimeout(entrarAlApp, 900);
+  });
+
+  // -------- cerrar sesión --------
+  document.querySelectorAll('.btn-cerrar-sesion').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await sb.auth.signOut();
+      location.reload();
+    });
+  });
+
+  // -------- configuración (año gravable) --------
+  let configId = null;
+
+  document.querySelectorAll('.btn-abrir-config').forEach(btn => {
+    btn.addEventListener('click', abrirConfig);
+  });
+  document.getElementById('btn-cerrar-config').addEventListener('click', () => {
+    document.getElementById('fondo-panel-config').classList.add('oculto');
+  });
+  document.getElementById('fondo-panel-config').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel-config') {
+      document.getElementById('fondo-panel-config').classList.add('oculto');
+    }
+  });
+
+  async function abrirConfig() {
+    const msg = document.getElementById('config-mensaje');
+    msg.className = 'mensaje-inline';
+    document.getElementById('fondo-panel-config').classList.remove('oculto');
+
+    const { data, error } = await sb.from('TblConfiguracion').select('id, AnioGravable').limit(1).single();
+    if (error) {
+      console.error(error);
+      msg.textContent = 'No se pudo cargar la configuración.';
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+    configId = data.id;
+    document.getElementById('config-anio-gravable').value = data.AnioGravable;
+  }
+
+  document.getElementById('btn-guardar-config').addEventListener('click', async () => {
+    const msg = document.getElementById('config-mensaje');
+    const valor = Number(document.getElementById('config-anio-gravable').value);
+    if (!valor || !configId) return;
+
+    const btn = document.getElementById('btn-guardar-config');
+    btn.disabled = true;
+
+    const { error } = await sb.from('TblConfiguracion').update({ AnioGravable: valor }).eq('id', configId);
+
+    btn.disabled = false;
+
+    if (error) {
+      console.error(error);
+      msg.textContent = 'No se pudo guardar: ' + error.message;
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+    msg.textContent = 'Año gravable actualizado.';
+    msg.className = 'mensaje-inline visible ok';
+    setTimeout(() => document.getElementById('fondo-panel-config').classList.add('oculto'), 800);
+  });
+
+  // -------- navegación por pestañas (Clientes / Vencimientos / Declaraciones / Alertas) --------
+  document.querySelectorAll('.tab-nav').forEach(btn => {
+    btn.addEventListener('click', () => mostrarPantalla(btn.dataset.target));
+  });
+
+  function mostrarPantalla(nombre) {
+    document.getElementById('pantalla-clientes').classList.toggle('oculto', nombre !== 'clientes');
+    document.getElementById('pantalla-vencimientos').classList.toggle('oculto', nombre !== 'vencimientos');
+    document.getElementById('pantalla-declaraciones').classList.toggle('oculto', nombre !== 'declaraciones');
+    document.getElementById('pantalla-alertas').classList.toggle('oculto', nombre !== 'alertas');
+    document.getElementById('pantalla-cuestionarios').classList.toggle('oculto', nombre !== 'cuestionarios');
+    document.querySelectorAll('.tab-nav').forEach(btn => {
+      btn.classList.toggle('activo', btn.dataset.target === nombre);
+    });
+
+    if (nombre === 'vencimientos' && !vencimientosGeneralesCargados) {
+      cargarCatalogoImpuestos();
+      cargarVencimientosGeneral();
+    }
+    if (nombre === 'declaraciones' && !declaracionesCargadas) {
+      cargarDeclaraciones();
+    }
+    if (nombre === 'alertas') {
+      cargarAlertas(); // siempre fresca al entrar a la pestaña
+    }
+    if (nombre === 'cuestionarios' && !cuestionariosCargados) {
+      cargarCuestionarios();
+    }
+  }
+
+  // -------- carga de catálogos (para los <select>) --------
+  async function cargarCatalogos() {
+    const [rp, rd] = await Promise.all([
+      sb.from('TbltipoPersona').select('id, TipoPersona'),
+      sb.from('TbltipoDocumento').select('id, TipoDoc')
+    ]);
+    tiposPersona = rp.data || [];
+    tiposDocumento = rd.data || [];
+
+    const selPersona = document.getElementById('f-tipo-persona');
+    tiposPersona.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.id; op.textContent = t.TipoPersona;
+      selPersona.appendChild(op);
+    });
+
+    const selDoc = document.getElementById('f-tipo-documento');
+    tiposDocumento.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.id; op.textContent = t.TipoDoc;
+      selDoc.appendChild(op);
+    });
+  }
+
+  function nombreTipoPersona(id) {
+    const t = tiposPersona.find(x => String(x.id) === String(id));
+    return t ? t.TipoPersona : '—';
+  }
+
+  // -------- carga y render de clientes --------
+  async function cargarClientes() {
+    document.getElementById('estado-carga').classList.remove('oculto');
+    document.getElementById('tabla-clientes').classList.add('oculto');
+    document.getElementById('estado-vacio').classList.add('oculto');
+
+    const { data, error } = await sb
+      .from('vista_clientes')
+      .select('*')
+      .order('Apellido', { ascending: true });
+
+    document.getElementById('estado-carga').classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      document.getElementById('estado-vacio').classList.remove('oculto');
+      document.getElementById('estado-vacio').innerHTML =
+        '<strong>No se pudieron cargar los clientes</strong>' + error.message;
+      return;
+    }
+
+    clientes = data || [];
+    renderTabla(clientes);
+  }
+
+  function renderTabla(lista) {
+    const cuerpo = document.getElementById('cuerpo-tabla');
+    cuerpo.innerHTML = '';
+
+    const totalGeneral = clientes.length;
+    document.getElementById('contador-clientes').textContent =
+      lista.length === totalGeneral
+        ? `${totalGeneral} cliente${totalGeneral === 1 ? '' : 's'}`
+        : `Mostrando ${lista.length} de ${totalGeneral} clientes`;
+
+    if (!lista.length) {
+      document.getElementById('estado-vacio').classList.remove('oculto');
+      document.getElementById('tabla-clientes').classList.add('oculto');
+      return;
+    }
+    document.getElementById('estado-vacio').classList.add('oculto');
+    document.getElementById('tabla-clientes').classList.remove('oculto');
+
+    lista.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${c.Nombres || '—'}</td>
+        <td>${c.Apellido || '—'}</td>
+        <td><span class="etiqueta-tipo">${c.tipo_persona || '—'}</span></td>
+        <td class="mono">${c.Telefono ?? '—'}</td>
+        <td class="celda-acciones">
+          <button class="btn-fila" data-id="${c.id}">Editar</button>
+          <button class="btn-fila btn-fila-venc" data-id-venc="${c.id}" data-nombre-venc="${(c.Nombres || '') + ' ' + (c.Apellido || '')}">Vencimientos</button>
+        </td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+
+    cuerpo.querySelectorAll('.btn-fila:not(.btn-fila-venc)').forEach(btn => {
+      btn.addEventListener('click', () => abrirFormulario(btn.dataset.id));
+    });
+    cuerpo.querySelectorAll('.btn-fila-venc').forEach(btn => {
+      btn.addEventListener('click', () => abrirVencimientos(btn.dataset.idVenc, btn.dataset.nombreVenc));
+    });
+  }
+
+  document.getElementById('input-buscar').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const filtrado = clientes.filter(c =>
+      (c.Nombres || '').toLowerCase().includes(q) ||
+      (c.Apellido || '').toLowerCase().includes(q)
+    );
+    renderTabla(filtrado);
+  });
+
+  // -------- abrir / cerrar panel formulario --------
+  document.getElementById('btn-nuevo-cliente').addEventListener('click', () => abrirFormulario(null));
+  document.getElementById('btn-cancelar-form').addEventListener('click', cerrarFormulario);
+  document.getElementById('fondo-panel').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel') cerrarFormulario();
+  });
+
+  async function abrirFormulario(id) {
+    const form = document.getElementById('form-cliente');
+    form.reset();
+    ocultarMensaje();
+    idEnEdicion = id || null;
+
+    if (id) {
+      document.getElementById('titulo-form').textContent = 'Editar cliente';
+      document.getElementById('ficha-num').textContent = 'Cargando ficha…';
+      document.getElementById('fondo-panel').classList.remove('oculto');
+
+      // La vista de la tabla no trae todos los campos del formulario,
+      // así que se busca el registro completo directo en TblCliente.
+      const { data: c, error } = await sb
+        .from('TblCliente')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error || !c) {
+        console.error(error);
+        mostrarMensaje('No se pudo cargar la información del cliente.', 'err');
+        return;
+      }
+
+      document.getElementById('ficha-num').textContent = 'Ficha N.º ' + c.id;
+      document.getElementById('f-nombres').value = c.Nombres || '';
+      document.getElementById('f-apellido').value = c.Apellido || '';
+      document.getElementById('f-tipo-documento').value = c.TipoDocumento || '';
+      document.getElementById('f-documento').value = c.Documento || '';
+      document.getElementById('f-fecha-exped').value = c.FechaExped || '';
+      document.getElementById('f-tipo-persona').value = c.TipoPersona || '';
+      document.getElementById('f-correo').value = c.Correo || '';
+      document.getElementById('f-telefono').value = c.Telefono ?? '';
+      document.getElementById('f-ocupacion').value = c.Ocupacion || '';
+      document.getElementById('f-ps-dian').value = c.PS_Dian || '';
+    } else {
+      document.getElementById('titulo-form').textContent = 'Nuevo cliente';
+      document.getElementById('ficha-num').textContent = 'Cliente nuevo';
+      document.getElementById('fondo-panel').classList.remove('oculto');
+    }
+  }
+
+  function cerrarFormulario() {
+    document.getElementById('fondo-panel').classList.add('oculto');
+  }
+
+  // -------- panel de vencimientos --------
+  document.getElementById('btn-cerrar-venc').addEventListener('click', cerrarVencimientos);
+  document.getElementById('fondo-panel-venc').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel-venc') cerrarVencimientos();
+  });
+
+  function cerrarVencimientos() {
+    document.getElementById('fondo-panel-venc').classList.add('oculto');
+  }
+
+  function formatearFecha(fechaISO) {
+    if (!fechaISO) return '—';
+    const [anio, mes, dia] = fechaISO.split('-');
+    return `${dia}/${mes}/${anio}`;
+  }
+
+  async function abrirVencimientos(clienteId, nombreCliente) {
+    document.getElementById('venc-nombre-cliente').textContent = nombreCliente || '';
+    document.getElementById('venc-estado-carga').classList.remove('oculto');
+    document.getElementById('venc-estado-vacio').classList.add('oculto');
+    document.getElementById('lista-vencimientos').classList.add('oculto');
+    document.getElementById('fondo-panel-venc').classList.remove('oculto');
+
+    const { data, error } = await sb
+      .from('vista_vencimientos_clientes')
+      .select('impuesto, fecha_vence')
+      .eq('cliente_id', clienteId)
+      .order('fecha_vence', { ascending: true });
+
+    document.getElementById('venc-estado-carga').classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      document.getElementById('venc-estado-vacio').classList.remove('oculto');
+      document.getElementById('venc-estado-vacio').innerHTML =
+        '<strong>No se pudieron cargar los vencimientos</strong>' + error.message;
+      return;
+    }
+
+    if (!data || !data.length) {
+      document.getElementById('venc-estado-vacio').classList.remove('oculto');
+      return;
+    }
+
+    const lista = document.getElementById('lista-vencimientos');
+    lista.innerHTML = '';
+    data.forEach(v => {
+      const li = document.createElement('li');
+      li.className = 'item-vencimiento';
+      li.innerHTML = `
+        <span class="nombre-impuesto">${v.impuesto}</span>
+        <span class="fecha-vence">${formatearFecha(v.fecha_vence)}</span>
+      `;
+      lista.appendChild(li);
+    });
+    lista.classList.remove('oculto');
+  }
+
+  // -------- sección general de vencimientos (con filtros) --------
+  async function cargarCatalogoImpuestos() {
+    const { data, error } = await sb
+      .from('TipoImpuesto')
+      .select('id, Nombr_Impuesto')
+      .order('Nombr_Impuesto', { ascending: true });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+    tiposImpuesto = data || [];
+
+    const selImpuesto = document.getElementById('filtro-impuesto');
+    tiposImpuesto.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.Nombr_Impuesto;
+      op.textContent = t.Nombr_Impuesto;
+      selImpuesto.appendChild(op);
+    });
+
+    const selTipoPersona = document.getElementById('filtro-tipo-persona');
+    tiposPersona.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.TipoPersona;
+      op.textContent = t.TipoPersona;
+      selTipoPersona.appendChild(op);
+    });
+  }
+
+  async function cargarVencimientosGeneral() {
+    document.getElementById('venc-general-carga').classList.remove('oculto');
+    document.getElementById('tabla-vencimientos-general').classList.add('oculto');
+    document.getElementById('venc-general-vacio').classList.add('oculto');
+
+    const { data, error } = await sb
+      .from('vista_vencimientos_clientes')
+      .select('cliente_id, Nombres, Apellido, tipo_persona, calendario_id, impuesto, fecha_vence, agendar_declaracion')
+      .order('fecha_vence', { ascending: true });
+
+    document.getElementById('venc-general-carga').classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      document.getElementById('venc-general-vacio').classList.remove('oculto');
+      document.getElementById('venc-general-vacio').innerHTML =
+        '<strong>No se pudieron cargar los vencimientos</strong>' + error.message;
+      return;
+    }
+
+    vencimientosGenerales = data || [];
+    vencimientosGeneralesCargados = true;
+    aplicarFiltrosVencimientos();
+  }
+
+  document.getElementById('btn-actualizar-venc').addEventListener('click', () => {
+    cargarVencimientosGeneral();
+  });
+
+  function aplicarFiltrosVencimientos() {
+    const q = document.getElementById('input-buscar-venc').value.trim().toLowerCase();
+    const impuestoSel = document.getElementById('filtro-impuesto').value;
+    const tipoPersonaSel = document.getElementById('filtro-tipo-persona').value;
+    const agendarSel = document.getElementById('filtro-agendar').value;
+
+    const filtrado = vencimientosGenerales.filter(v => {
+      const coincideTexto =
+        (v.Nombres || '').toLowerCase().includes(q) ||
+        (v.Apellido || '').toLowerCase().includes(q);
+      const coincideImpuesto = !impuestoSel || v.impuesto === impuestoSel;
+      const coincideTipoPersona = !tipoPersonaSel || v.tipo_persona === tipoPersonaSel;
+      const coincideAgendar =
+        !agendarSel ||
+        (agendarSel === 'si' && v.agendar_declaracion) ||
+        (agendarSel === 'no' && !v.agendar_declaracion);
+      return coincideTexto && coincideImpuesto && coincideTipoPersona && coincideAgendar;
+    });
+
+    renderTablaVencimientosGeneral(filtrado);
+  }
+
+  function renderTablaVencimientosGeneral(lista) {
+    const cuerpo = document.getElementById('cuerpo-tabla-vencimientos');
+    cuerpo.innerHTML = '';
+
+    const totalGeneral = vencimientosGenerales.length;
+    document.getElementById('contador-vencimientos').textContent =
+      lista.length === totalGeneral
+        ? `${totalGeneral} vencimiento${totalGeneral === 1 ? '' : 's'}`
+        : `Mostrando ${lista.length} de ${totalGeneral} vencimientos`;
+
+    if (!lista.length) {
+      document.getElementById('venc-general-vacio').classList.remove('oculto');
+      document.getElementById('tabla-vencimientos-general').classList.add('oculto');
+      return;
+    }
+    document.getElementById('venc-general-vacio').classList.add('oculto');
+    document.getElementById('tabla-vencimientos-general').classList.remove('oculto');
+
+    lista.forEach(v => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${v.Nombres || '—'}</td>
+        <td>${v.Apellido || '—'}</td>
+        <td><span class="etiqueta-tipo">${v.impuesto}</span></td>
+        <td class="mono">${formatearFecha(v.fecha_vence)}</td>
+        <td>
+          <button class="celda-pago-btn ${v.agendar_declaracion ? 'si' : 'no'}"
+                  data-cliente-id="${v.cliente_id}"
+                  data-calendario-id="${v.calendario_id}"
+                  data-valor-agendar="${v.agendar_declaracion}">
+            ${v.agendar_declaracion ? 'Sí' : 'No'}
+          </button>
+        </td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+
+    cuerpo.querySelectorAll('[data-calendario-id]').forEach(btn => {
+      btn.addEventListener('click', () => toggleAgendarDeclaracion(
+        btn.dataset.clienteId,
+        btn.dataset.calendarioId,
+        btn.dataset.valorAgendar === 'true'
+      ));
+    });
+  }
+
+  async function toggleAgendarDeclaracion(clienteId, calendarioId, valorActual) {
+    const { error } = await sb
+      .from('TblVencimientoAgendado')
+      .upsert(
+        { Cliente: clienteId, Calendario: calendarioId, AgendarDeclaracion: !valorActual },
+        { onConflict: 'Cliente,Calendario' }
+      );
+
+    if (error) {
+      console.error(error);
+      alert('No se pudo actualizar "Agendar declaración": ' + error.message);
+      return;
+    }
+    await cargarVencimientosGeneral();
+    await cargarAlertas();
+  }
+
+  document.getElementById('input-buscar-venc').addEventListener('input', aplicarFiltrosVencimientos);
+  document.getElementById('filtro-impuesto').addEventListener('change', aplicarFiltrosVencimientos);
+  document.getElementById('filtro-agendar').addEventListener('change', aplicarFiltrosVencimientos);
+  document.getElementById('filtro-tipo-persona').addEventListener('change', aplicarFiltrosVencimientos);
+
+  // =====================================================================
+  // SECCIÓN DECLARACIONES
+  // =====================================================================
+  async function cargarDeclaraciones() {
+    document.getElementById('decl-estado-carga').classList.remove('oculto');
+    document.getElementById('tabla-declaraciones').classList.add('oculto');
+    document.getElementById('decl-estado-vacio').classList.add('oculto');
+
+    const { data, error } = await sb
+      .from('vista_declaraciones')
+      .select('*')
+      .order('FechaInicioPeriodo', { ascending: false });
+
+    document.getElementById('decl-estado-carga').classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      document.getElementById('decl-estado-vacio').classList.remove('oculto');
+      document.getElementById('decl-estado-vacio').innerHTML =
+        '<strong>No se pudieron cargar las declaraciones</strong>' + error.message;
+      return;
+    }
+
+    declaraciones = data || [];
+    declaracionesCargadas = true;
+    aplicarFiltrosDeclaraciones();
+  }
+
+  function aplicarFiltrosDeclaraciones() {
+    const q = document.getElementById('input-buscar-decl').value.trim().toLowerCase();
+    const estadoSel = document.getElementById('filtro-decl-estado').value;
+    const estadoContSel = document.getElementById('filtro-decl-estado-contador').value;
+
+    const filtrado = declaraciones.filter(d => {
+      const coincideTexto =
+        (d.Nombres || '').toLowerCase().includes(q) ||
+        (d.Apellido || '').toLowerCase().includes(q);
+      const coincideEstado = !estadoSel || d.Estado === estadoSel;
+      const coincideEstadoCont = !estadoContSel || d.EstadoContador === estadoContSel;
+      return coincideTexto && coincideEstado && coincideEstadoCont;
+    });
+
+    renderTablaDeclaraciones(filtrado);
+  }
+
+  document.getElementById('input-buscar-decl').addEventListener('input', aplicarFiltrosDeclaraciones);
+  document.getElementById('filtro-decl-estado').addEventListener('change', aplicarFiltrosDeclaraciones);
+  document.getElementById('filtro-decl-estado-contador').addEventListener('change', aplicarFiltrosDeclaraciones);
+
+  function claseEstado(valor) {
+    return (valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function renderTablaDeclaraciones(lista) {
+    const cuerpo = document.getElementById('cuerpo-tabla-declaraciones');
+    cuerpo.innerHTML = '';
+
+    const totalGeneral = declaraciones.length;
+    document.getElementById('contador-declaraciones').textContent =
+      lista.length === totalGeneral
+        ? `${totalGeneral} declaración${totalGeneral === 1 ? '' : 'es'}`
+        : `Mostrando ${lista.length} de ${totalGeneral} declaraciones`;
+
+    if (!lista.length) {
+      document.getElementById('decl-estado-vacio').classList.remove('oculto');
+      document.getElementById('tabla-declaraciones').classList.add('oculto');
+      return;
+    }
+    document.getElementById('decl-estado-vacio').classList.add('oculto');
+    document.getElementById('tabla-declaraciones').classList.remove('oculto');
+
+    lista.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.Nombres || ''} ${d.Apellido || ''}</td>
+        <td class="mono">${formatearFecha(d.FechaInicioPeriodo)} – ${formatearFecha(d.FechaFinPeriodo)}</td>
+        <td>${d.impuestos || '—'}</td>
+        <td><span class="etiqueta-estado ${claseEstado(d.Estado)}">${d.Estado}</span></td>
+        <td><span class="etiqueta-estado ${claseEstado(d.EstadoContador)}">${d.EstadoContador}</span></td>
+        <td class="mono">${d.ValorCobrado != null ? '$' + Number(d.ValorCobrado).toLocaleString('es-CO') : '—'}</td>
+        <td>
+          <button class="celda-pago-btn ${d.PagadoContador ? 'si' : 'no'}" data-id-pago="${d.id}" data-valor-pago="${d.PagadoContador}">
+            ${d.PagadoContador ? 'Pagado' : 'Pendiente'}
+          </button>
+        </td>
+        <td class="celda-acciones">
+          <button class="btn-fila" data-id-decl="${d.id}">Editar</button>
+          <button class="btn-fila btn-fila-venc" data-id-archivos-decl="${d.id}" data-nombre-archivos-decl="${(d.Nombres || '') + ' ' + (d.Apellido || '')}">Archivos</button>
+          <button class="btn-fila btn-fila-eliminar" data-id-eliminar-decl="${d.id}">Eliminar</button>
+        </td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+
+    cuerpo.querySelectorAll('[data-id-decl]').forEach(btn => {
+      btn.addEventListener('click', () => abrirFormularioDeclaracion(btn.dataset.idDecl));
+    });
+    cuerpo.querySelectorAll('[data-id-pago]').forEach(btn => {
+      btn.addEventListener('click', () => togglePagadoContador(btn.dataset.idPago, btn.dataset.valorPago === 'true'));
+    });
+    cuerpo.querySelectorAll('[data-id-archivos-decl]').forEach(btn => {
+      btn.addEventListener('click', () => abrirPanelArchivosDeclaracion(btn.dataset.idArchivosDecl, btn.dataset.nombreArchivosDecl));
+    });
+    cuerpo.querySelectorAll('[data-id-eliminar-decl]').forEach(btn => {
+      btn.addEventListener('click', () => eliminarDeclaracion(btn.dataset.idEliminarDecl));
+    });
+  }
+
+  async function eliminarDeclaracion(declaracionId) {
+    if (!confirm('¿Eliminar esta declaración? Se borrarán también sus archivos adjuntos. Esta acción no se puede deshacer.')) return;
+
+    // Primero borra del Storage los archivos asociados, para no dejar huerfanos
+    const { data: archivos, error: errorArchivos } = await sb
+      .from('TblDeclaracionArchivos')
+      .select('RutaStorage')
+      .eq('Declaracion', declaracionId);
+
+    if (errorArchivos) {
+      console.error(errorArchivos);
+      alert('No se pudo verificar los archivos asociados: ' + errorArchivos.message);
+      return;
+    }
+
+    if (archivos && archivos.length) {
+      const rutas = archivos.map(a => a.RutaStorage);
+      const { error: errorBorrarStorage } = await sb.storage.from(BUCKET_ARCHIVOS).remove(rutas);
+      if (errorBorrarStorage) {
+        console.error(errorBorrarStorage);
+        alert('No se pudieron borrar los archivos del almacenamiento: ' + errorBorrarStorage.message);
+        return;
+      }
+    }
+
+    // Borra la declaracion (TblDeclaracionImpuestos y TblDeclaracionArchivos
+    // se borran solos por el "on delete cascade")
+    const { error } = await sb.from('TblDeclaraciones').delete().eq('id', declaracionId);
+
+    if (error) {
+      console.error(error);
+      alert('No se pudo eliminar la declaración: ' + error.message);
+      return;
+    }
+
+    await cargarDeclaraciones();
+    await cargarAlertas();
+  }
+
+  // =====================================================================
+  // SECCIÓN ALERTAS
+  // =====================================================================
+  document.getElementById('btn-actualizar-alertas').addEventListener('click', cargarAlertas);
+
+  function claseNotificacion(tipo) {
+    return (tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+  }
+
+  function actualizarBadgeAlertas(total) {
+    ['badge-alertas-1', 'badge-alertas-2', 'badge-alertas-3', 'badge-alertas-4', 'badge-alertas-5'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = total;
+      el.classList.toggle('oculto', total === 0);
+    });
+  }
+
+  async function cargarAlertas() {
+    const cargaEl = document.getElementById('alertas-estado-carga');
+    const vacioEl = document.getElementById('alertas-estado-vacio');
+    const tablaEl = document.getElementById('tabla-alertas');
+    if (cargaEl) cargaEl.classList.remove('oculto');
+    if (tablaEl) tablaEl.classList.add('oculto');
+    if (vacioEl) vacioEl.classList.add('oculto');
+
+    const { data, error } = await sb
+      .from('vista_alertas_declaraciones')
+      .select('*')
+      .order('fecha_vence', { ascending: true });
+
+    if (cargaEl) cargaEl.classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      actualizarBadgeAlertas(0);
+      if (vacioEl) {
+        vacioEl.classList.remove('oculto');
+        vacioEl.innerHTML = '<strong>No se pudieron cargar las alertas</strong>' + error.message;
+      }
+      return;
+    }
+
+    alertas = data || [];
+    actualizarBadgeAlertas(alertas.length);
+    renderTablaAlertas(alertas);
+  }
+
+  function renderTablaAlertas(lista) {
+    const cuerpo = document.getElementById('cuerpo-tabla-alertas');
+    if (!cuerpo) return;
+    cuerpo.innerHTML = '';
+
+    const contador = document.getElementById('contador-alertas');
+    if (contador) {
+      contador.textContent = `${lista.length} alerta${lista.length === 1 ? '' : 's'}`;
+    }
+
+    if (!lista.length) {
+      document.getElementById('alertas-estado-vacio').classList.remove('oculto');
+      document.getElementById('tabla-alertas').classList.add('oculto');
+      return;
+    }
+    document.getElementById('alertas-estado-vacio').classList.add('oculto');
+    document.getElementById('tabla-alertas').classList.remove('oculto');
+
+    lista.forEach(a => {
+      const dias = a.dias_para_vencer;
+      const textoDias = dias < 0
+        ? `Vencida hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`
+        : dias === 0
+          ? 'Vence hoy'
+          : `Faltan ${dias} día${dias === 1 ? '' : 's'}`;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${a.Nombres || ''} ${a.Apellido || ''}</td>
+        <td><span class="etiqueta-tipo">${a.impuesto}</span></td>
+        <td class="mono">${formatearFecha(a.fecha_vence)}</td>
+        <td class="mono">${textoDias}</td>
+        <td><span class="etiqueta-notificacion ${claseNotificacion(a.tipo_alerta)}">${a.tipo_alerta}</span></td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  // =====================================================================
+  // SECCIÓN CUESTIONARIOS (respuestas del formulario público de renta)
+  // =====================================================================
+  async function cargarCuestionarios() {
+    document.getElementById('cuest-estado-carga').classList.remove('oculto');
+    document.getElementById('tabla-cuestionarios').classList.add('oculto');
+    document.getElementById('cuest-estado-vacio').classList.add('oculto');
+
+    const { data, error } = await sb
+      .from('TblCuestionarioRenta')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    document.getElementById('cuest-estado-carga').classList.add('oculto');
+
+    if (error) {
+      console.error(error);
+      document.getElementById('cuest-estado-vacio').classList.remove('oculto');
+      document.getElementById('cuest-estado-vacio').innerHTML =
+        '<strong>No se pudieron cargar los cuestionarios</strong>' + error.message;
+      return;
+    }
+
+    cuestionarios = data || [];
+    cuestionariosCargados = true;
+    aplicarFiltroCuestionarios();
+  }
+
+  function aplicarFiltroCuestionarios() {
+    const q = document.getElementById('input-buscar-cuest').value.trim().toLowerCase();
+    const filtrado = cuestionarios.filter(c =>
+      (c.NombreDeclarante || '').toLowerCase().includes(q) ||
+      (c.NumeroDocumento || '').toLowerCase().includes(q)
+    );
+    renderTablaCuestionarios(filtrado);
+  }
+  document.getElementById('input-buscar-cuest').addEventListener('input', aplicarFiltroCuestionarios);
+
+  function renderTablaCuestionarios(lista) {
+    const cuerpo = document.getElementById('cuerpo-tabla-cuestionarios');
+    cuerpo.innerHTML = '';
+
+    const totalGeneral = cuestionarios.length;
+    document.getElementById('contador-cuestionarios').textContent =
+      lista.length === totalGeneral
+        ? `${totalGeneral} cuestionario${totalGeneral === 1 ? '' : 's'}`
+        : `Mostrando ${lista.length} de ${totalGeneral} cuestionarios`;
+
+    if (!lista.length) {
+      document.getElementById('cuest-estado-vacio').classList.remove('oculto');
+      document.getElementById('tabla-cuestionarios').classList.add('oculto');
+      return;
+    }
+    document.getElementById('cuest-estado-vacio').classList.add('oculto');
+    document.getElementById('tabla-cuestionarios').classList.remove('oculto');
+
+    lista.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${c.NombreDeclarante || '—'}</td>
+        <td class="mono">${c.NumeroDocumento || '—'}</td>
+        <td class="mono">${c.Telefono || '—'}</td>
+        <td class="mono">${formatearFechaHora(c.created_at)}</td>
+        <td><button class="btn-fila" data-id-cuest="${c.id}">Ver detalle</button></td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+
+    cuerpo.querySelectorAll('[data-id-cuest]').forEach(btn => {
+      btn.addEventListener('click', () => abrirDetalleCuestionario(btn.dataset.idCuest));
+    });
+  }
+
+  document.getElementById('btn-cerrar-cuest').addEventListener('click', () => {
+    document.getElementById('fondo-panel-cuest').classList.add('oculto');
+  });
+  document.getElementById('fondo-panel-cuest').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel-cuest') document.getElementById('fondo-panel-cuest').classList.add('oculto');
+  });
+
+  function siNo(valor) { return valor ? 'Sí' : 'No'; }
+
+  function abrirDetalleCuestionario(id) {
+    const c = cuestionarios.find(x => String(x.id) === String(id));
+    if (!c) return;
+
+    document.getElementById('cuest-detalle-nombre').textContent =
+      `${c.NombreDeclarante || ''} · Doc. ${c.NumeroDocumento || ''} · Año ${c.AnioGravable || ''}`;
+
+    const ingresos = (c.IngresosTipos || []).join(', ') || '—';
+    const inmuebles = (c.Inmuebles || []).map(i => `${i.tipo || '—'} (${i.participacion ?? '—'}%)`).join('<br>') || '—';
+    const dependientes = (c.Dependientes || []).map(d => `${d.nombre || '—'} · ${d.edad ?? '—'} años · ${d.parentesco || '—'}`).join('<br>') || '—';
+    const medicinaPara = (c.MedicinaPrepagadaPara || []).join(', ') || '—';
+    const situaciones = c.Situaciones || {};
+    const situacionesTexto = SITUACIONES_DEFINICION
+      .filter(s => situaciones[s.clave])
+      .map(s => s.texto)
+      .join(', ') || 'Ninguna';
+
+    document.getElementById('cuest-detalle-contenido').innerHTML = `
+      <div class="detalle-seccion">
+        <h4>Datos iniciales</h4>
+        <div class="detalle-item"><strong>Teléfono:</strong> ${c.Telefono || '—'}</div>
+        <div class="detalle-item"><strong>Correo:</strong> ${c.Correo || '—'}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>1. Salió del país</h4>
+        <div class="detalle-item">${siNo(c.SalioPais)}${c.SalioPais ? ` — ${c.SalioPaisPais || '—'}, ${c.SalioPaisTiempo || '—'}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>2. Ingresos recibidos</h4>
+        <div class="detalle-item">${ingresos}${c.IngresosOtrosDescripcion ? ` (Otros: ${c.IngresosOtrosDescripcion})` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>3. CDT</h4>
+        <div class="detalle-item">${siNo(c.TieneCDT)}${c.TieneCDT ? ` — ${c.CDTEntidades || '—'}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>4. Inversiones</h4>
+        <div class="detalle-item">${siNo(c.TieneInversiones)}${c.TieneInversiones ? ` — ${c.InversionesCuales || '—'}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>5. Criptoactivos</h4>
+        <div class="detalle-item">${siNo(c.TieneCripto)}${c.TieneCripto ? ` — ${c.CriptoCuales || '—'}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>6. Activos en el exterior</h4>
+        <div class="detalle-item">${siNo(c.ActivosExterior)}${c.ActivosExterior ? ` — ${c.ActivosExteriorActivo || '—'} en ${c.ActivosExteriorPais || '—'}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>7. Bienes inmuebles</h4>
+        <div class="detalle-item">${siNo(c.EsPropietarioInmuebles)}</div>
+        ${c.EsPropietarioInmuebles ? `<div class="detalle-item">${inmuebles}</div>` : ''}
+      </div>
+      <div class="detalle-seccion">
+        <h4>8. Vehículos</h4>
+        <div class="detalle-item">${siNo(c.PoseeVehiculos)}${c.PoseeVehiculos ? ` — ${c.VehiculosCuales || '—'}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>9. Dinero prestado a terceros</h4>
+        <div class="detalle-item">${siNo(c.DineroPrestado)}${c.DineroPrestado ? ` — $${Number(c.DineroPrestadoTotal || 0).toLocaleString('es-CO')}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>10. Deudas pendientes</h4>
+        <div class="detalle-item">${siNo(c.DeudasPendientes)}${c.DeudasPendientes ? ` — $${Number(c.DeudasPendientesTotal || 0).toLocaleString('es-CO')}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>11. Crédito de vivienda</h4>
+        <div class="detalle-item">${siNo(c.CreditoVivienda)}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>12. Medicina prepagada</h4>
+        <div class="detalle-item">${siNo(c.MedicinaPrepagada)}${c.MedicinaPrepagada ? ` — Para: ${medicinaPara}` : ''}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>13. Dependientes económicos</h4>
+        <div class="detalle-item">${siNo(c.DependientesEconomicos)}</div>
+        ${c.DependientesEconomicos ? `<div class="detalle-item">${dependientes}</div>` : ''}
+      </div>
+      <div class="detalle-seccion">
+        <h4>14. Aportes voluntarios</h4>
+        <div class="detalle-item">${siNo(c.AportesVoluntarios)}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>15. Situaciones del año</h4>
+        <div class="detalle-item">${situacionesTexto}</div>
+      </div>
+      <div class="detalle-seccion">
+        <h4>16. Información adicional</h4>
+        <div class="detalle-item">${c.InformacionAdicional || '<span class="detalle-vacio">Sin comentarios</span>'}</div>
+      </div>
+    `;
+
+    document.getElementById('fondo-panel-cuest').classList.remove('oculto');
+  }
+
+  async function togglePagadoContador(declaracionId, valorActual) {
+    const { error } = await sb
+      .from('TblDeclaraciones')
+      .update({ PagadoContador: !valorActual })
+      .eq('id', declaracionId);
+
+    if (error) {
+      console.error(error);
+      alert('No se pudo actualizar el estado de pago: ' + error.message);
+      return;
+    }
+    await cargarDeclaraciones();
+  }
+
+  // -------- panel formulario de declaración --------
+  document.getElementById('btn-nueva-declaracion').addEventListener('click', () => abrirFormularioDeclaracion(null));
+  document.getElementById('btn-cancelar-decl').addEventListener('click', cerrarFormularioDeclaracion);
+  document.getElementById('fondo-panel-decl').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel-decl') cerrarFormularioDeclaracion();
+  });
+
+  function cerrarFormularioDeclaracion() {
+    document.getElementById('fondo-panel-decl').classList.add('oculto');
+  }
+
+  function poblarSelectClientesDeclaracion() {
+    const sel = document.getElementById('fd-cliente');
+    sel.innerHTML = '<option value="">Selecciona un cliente</option>';
+    clientes.forEach(c => {
+      const op = document.createElement('option');
+      op.value = c.id;
+      op.textContent = `${c.Nombres || ''} ${c.Apellido || ''}`;
+      sel.appendChild(op);
+    });
+  }
+
+  async function cargarImpuestosParaCliente(clienteId, seleccionados) {
+    const cont = document.getElementById('fd-lista-impuestos');
+    if (!clienteId) {
+      cont.innerHTML = '<p class="texto-ayuda">Selecciona primero un cliente para ver sus impuestos aplicables.</p>';
+      return;
+    }
+    cont.innerHTML = '<p class="texto-ayuda">Cargando impuestos del cliente…</p>';
+
+    const { data, error } = await sb
+      .from('vista_vencimientos_clientes')
+      .select('calendario_id, impuesto, fecha_vence')
+      .eq('cliente_id', clienteId)
+      .order('fecha_vence', { ascending: true });
+
+    if (error) {
+      console.error(error);
+      cont.innerHTML = '<p class="texto-ayuda">No se pudieron cargar los impuestos: ' + error.message + '</p>';
+      return;
+    }
+
+    if (!data || !data.length) {
+      cont.innerHTML = '<p class="texto-ayuda">Este cliente no tiene impuestos aplicables en el calendario.</p>';
+      return;
+    }
+
+    const seleccionadosSet = new Set((seleccionados || []).map(String));
+    const hoy = new Date().toISOString().slice(0, 10);
+    cont.innerHTML = '';
+    data.forEach(v => {
+      const marcado = seleccionadosSet.has(String(v.calendario_id));
+      const vencido = v.fecha_vence && v.fecha_vence < hoy;
+      const item = document.createElement('label');
+      item.className = 'item-check';
+      item.innerHTML = `
+        <input type="checkbox" value="${v.calendario_id}" ${marcado ? 'checked' : ''}>
+        <span>${v.impuesto}${vencido ? '<span class="badge-vencido">Vencido</span>' : ''}</span>
+        <span class="fecha-vence-chip ${vencido ? 'vencido' : ''}">${formatearFecha(v.fecha_vence)}</span>
+      `;
+      cont.appendChild(item);
+    });
+  }
+
+  document.getElementById('fd-cliente').addEventListener('change', (e) => {
+    cargarImpuestosParaCliente(e.target.value, []);
+  });
+
+  function configurarToggle(btn) {
+    btn.addEventListener('click', () => {
+      const pagado = btn.dataset.valor === 'true';
+      btn.dataset.valor = (!pagado).toString();
+      btn.textContent = !pagado ? 'Pagado' : 'No pagado';
+      btn.classList.toggle('pagado', !pagado);
+    });
+  }
+  configurarToggle(document.getElementById('fd-pagado-contador'));
+  configurarToggle(document.getElementById('fd-pagado-dian'));
+
+  function resetToggle(btn, valor) {
+    btn.dataset.valor = valor ? 'true' : 'false';
+    btn.textContent = valor ? 'Pagado' : 'No pagado';
+    btn.classList.toggle('pagado', !!valor);
+  }
+
+  async function abrirFormularioDeclaracion(id) {
+    const form = document.getElementById('form-declaracion');
+    form.reset();
+    ocultarMensajeDecl();
+    idDeclEnEdicion = id || null;
+    poblarSelectClientesDeclaracion();
+    resetToggle(document.getElementById('fd-pagado-contador'), false);
+    resetToggle(document.getElementById('fd-pagado-dian'), false);
+    document.getElementById('fd-lista-impuestos').innerHTML =
+      '<p class="texto-ayuda">Selecciona primero un cliente para ver sus impuestos aplicables.</p>';
+    document.getElementById('fd-input-archivo').value = '';
+    document.getElementById('fd-lista-archivos').innerHTML = '';
+
+    if (id) {
+      document.getElementById('titulo-form-decl').textContent = 'Editar declaración';
+      document.getElementById('ficha-num-decl').textContent = 'Cargando…';
+      document.getElementById('fondo-panel-decl').classList.remove('oculto');
+
+      const { data: decl, error } = await sb
+        .from('TblDeclaraciones')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      const { data: detalle, error: errorDetalle } = await sb
+        .from('TblDeclaracionImpuestos')
+        .select('Calendario')
+        .eq('Declaracion', id);
+
+      if (error || errorDetalle || !decl) {
+        console.error(error || errorDetalle);
+        mostrarMensajeDecl('No se pudo cargar la declaración.', 'err');
+        return;
+      }
+
+      document.getElementById('ficha-num-decl').textContent = 'Declaración N.º ' + decl.id;
+      document.getElementById('fd-cliente').value = decl.Cliente || '';
+      document.getElementById('fd-fecha-inicio').value = decl.FechaInicioPeriodo || '';
+      document.getElementById('fd-fecha-fin').value = decl.FechaFinPeriodo || '';
+      document.getElementById('fd-estado').value = decl.Estado || 'Pendiente';
+      document.getElementById('fd-estado-contador').value = decl.EstadoContador || 'Borrador';
+      document.getElementById('fd-fecha-presentacion').value = decl.FechaPresentacion || '';
+      document.getElementById('fd-valor-cobrado').value = decl.ValorCobrado ?? '';
+      resetToggle(document.getElementById('fd-pagado-contador'), !!decl.PagadoContador);
+      resetToggle(document.getElementById('fd-pagado-dian'), !!decl.PagadoDian);
+
+      const calendarioIds = (detalle || []).map(x => x.Calendario);
+      await cargarImpuestosParaCliente(decl.Cliente, calendarioIds);
+      mostrarBloqueArchivos(true);
+      await cargarArchivosEn(id, 'fd-lista-archivos');
+    } else {
+      document.getElementById('titulo-form-decl').textContent = 'Nueva declaración';
+      document.getElementById('ficha-num-decl').textContent = 'Declaración nueva';
+      document.getElementById('fondo-panel-decl').classList.remove('oculto');
+      mostrarBloqueArchivos(false);
+    }
+  }
+
+  // -------- archivos adjuntos de la declaración (reutilizable) --------
+  const BUCKET_ARCHIVOS = 'declaraciones-archivos';
+
+  function mostrarBloqueArchivos(habilitado) {
+    document.getElementById('fd-archivos-bloqueado').classList.toggle('oculto', habilitado);
+    document.getElementById('fd-archivos-contenido').classList.toggle('oculto', !habilitado);
+  }
+
+  async function cargarArchivosEn(declaracionId, listaId) {
+    const lista = document.getElementById(listaId);
+    lista.innerHTML = '<li class="texto-ayuda">Cargando archivos…</li>';
+
+    const { data, error } = await sb
+      .from('TblDeclaracionArchivos')
+      .select('*')
+      .eq('Declaracion', declaracionId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error(error);
+      lista.innerHTML = '<li class="texto-ayuda">No se pudieron cargar los archivos.</li>';
+      return;
+    }
+
+    if (!data || !data.length) {
+      lista.innerHTML = '<li class="texto-ayuda">Todavía no hay archivos adjuntos.</li>';
+      return;
+    }
+
+    lista.innerHTML = '';
+    data.forEach(a => {
+      const li = document.createElement('li');
+      li.className = 'item-archivo';
+      li.innerHTML = `
+        <span class="icono-archivo ${claseIconoArchivo(a.NombreArchivo, a.TipoArchivo)}">${textoIconoArchivo(a.NombreArchivo, a.TipoArchivo)}</span>
+        <span class="info-archivo">
+          <span class="nombre-archivo">${a.NombreArchivo}</span>
+          <span class="fecha-archivo">${formatearFechaHora(a.created_at)}</span>
+        </span>
+        <span class="acciones-archivo">
+          <button type="button" class="btn-descargar" data-ruta="${a.RutaStorage}">Descargar</button>
+          <button type="button" class="btn-eliminar-archivo" data-id-archivo="${a.id}" data-ruta-archivo="${a.RutaStorage}">Eliminar</button>
+        </span>
+      `;
+      lista.appendChild(li);
+    });
+
+    lista.querySelectorAll('.btn-descargar').forEach(btn => {
+      btn.addEventListener('click', () => descargarArchivo(btn.dataset.ruta));
+    });
+    lista.querySelectorAll('.btn-eliminar-archivo').forEach(btn => {
+      btn.addEventListener('click', () => eliminarArchivo(btn.dataset.idArchivo, btn.dataset.rutaArchivo, declaracionId, listaId));
+    });
+  }
+
+  function claseIconoArchivo(nombre, tipo) {
+    const ext = (nombre.split('.').pop() || '').toLowerCase();
+    if (ext === 'pdf' || (tipo || '').includes('pdf')) return 'pdf';
+    if (['xls', 'xlsx', 'csv'].includes(ext) || (tipo || '').includes('sheet') || (tipo || '').includes('excel')) return 'xls';
+    return 'otro';
+  }
+
+  function textoIconoArchivo(nombre, tipo) {
+    const clase = claseIconoArchivo(nombre, tipo);
+    if (clase === 'pdf') return 'PDF';
+    if (clase === 'xls') return 'XLS';
+    return (nombre.split('.').pop() || '?').slice(0, 3).toUpperCase();
+  }
+
+  function formatearFechaHora(fechaISO) {
+    if (!fechaISO) return '';
+    const d = new Date(fechaISO);
+    const fecha = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const hora = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    return `${fecha} · ${hora}`;
+  }
+
+  async function descargarArchivo(ruta) {
+    const { data, error } = await sb.storage.from(BUCKET_ARCHIVOS).createSignedUrl(ruta, 60);
+    if (error || !data) {
+      console.error(error);
+      alert('No se pudo generar el enlace de descarga.');
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
+  }
+
+  async function eliminarArchivo(archivoId, ruta, declaracionId, listaId) {
+    if (!confirm('¿Eliminar este archivo?')) return;
+
+    const { error: errorStorage } = await sb.storage.from(BUCKET_ARCHIVOS).remove([ruta]);
+    if (errorStorage) {
+      console.error(errorStorage);
+      alert('No se pudo eliminar el archivo del almacenamiento.');
+      return;
+    }
+    const { error: errorMeta } = await sb.from('TblDeclaracionArchivos').delete().eq('id', archivoId);
+    if (errorMeta) {
+      console.error(errorMeta);
+      alert('El archivo se borró del almacenamiento, pero no se pudo quitar de la lista.');
+      return;
+    }
+    await cargarArchivosEn(declaracionId, listaId);
+  }
+
+  async function subirArchivos(archivos, declaracionId, listaId) {
+    for (const archivo of archivos) {
+      const rutaUnica = `declaracion_${declaracionId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${archivo.name}`;
+
+      const { error: errorSubida } = await sb.storage.from(BUCKET_ARCHIVOS).upload(rutaUnica, archivo);
+      if (errorSubida) {
+        console.error(errorSubida);
+        alert('No se pudo subir "' + archivo.name + '": ' + errorSubida.message);
+        continue;
+      }
+
+      const { error: errorMeta } = await sb.from('TblDeclaracionArchivos').insert({
+        Declaracion: declaracionId,
+        NombreArchivo: archivo.name,
+        RutaStorage: rutaUnica,
+        TipoArchivo: archivo.type || archivo.name.split('.').pop(),
+      });
+      if (errorMeta) {
+        console.error(errorMeta);
+        alert('El archivo se subió, pero no se pudo registrar: ' + errorMeta.message);
+      }
+    }
+    await cargarArchivosEn(declaracionId, listaId);
+  }
+
+  document.getElementById('fd-input-archivo').addEventListener('change', async (e) => {
+    const archivos = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!archivos.length || !idDeclEnEdicion) return;
+    await subirArchivos(archivos, idDeclEnEdicion, 'fd-lista-archivos');
+  });
+
+  // -------- arrastrar y soltar (reutilizable para ambas dropzones) --------
+  function configurarDropzone(dropzoneId, obtenerDeclaracionId, listaId) {
+    const zona = document.getElementById(dropzoneId);
+    ['dragenter', 'dragover'].forEach(evento => {
+      zona.addEventListener(evento, (e) => {
+        e.preventDefault();
+        zona.classList.add('arrastrando');
+      });
+    });
+    ['dragleave', 'dragend'].forEach(evento => {
+      zona.addEventListener(evento, () => zona.classList.remove('arrastrando'));
+    });
+    zona.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      zona.classList.remove('arrastrando');
+      const declaracionId = obtenerDeclaracionId();
+      const archivos = Array.from(e.dataTransfer.files || []);
+      if (!archivos.length || !declaracionId) return;
+      await subirArchivos(archivos, declaracionId, listaId);
+    });
+  }
+  configurarDropzone('fd-dropzone', () => idDeclEnEdicion, 'fd-lista-archivos');
+
+  // -------- panel de archivos con acceso directo desde la tabla --------
+  let idDeclParaArchivos = null;
+
+  document.getElementById('btn-cerrar-archivos-decl').addEventListener('click', cerrarPanelArchivosDeclaracion);
+  document.getElementById('fondo-panel-archivos-decl').addEventListener('click', (e) => {
+    if (e.target.id === 'fondo-panel-archivos-decl') cerrarPanelArchivosDeclaracion();
+  });
+
+  function cerrarPanelArchivosDeclaracion() {
+    document.getElementById('fondo-panel-archivos-decl').classList.add('oculto');
+  }
+
+  async function abrirPanelArchivosDeclaracion(declaracionId, nombreCliente) {
+    idDeclParaArchivos = declaracionId;
+    document.getElementById('pa-nombre-cliente').textContent = nombreCliente || ('Declaración N.º ' + declaracionId);
+    document.getElementById('pa-input-archivo').value = '';
+    document.getElementById('fondo-panel-archivos-decl').classList.remove('oculto');
+    await cargarArchivosEn(declaracionId, 'pa-lista-archivos');
+  }
+
+  document.getElementById('pa-input-archivo').addEventListener('change', async (e) => {
+    const archivos = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!archivos.length || !idDeclParaArchivos) return;
+    await subirArchivos(archivos, idDeclParaArchivos, 'pa-lista-archivos');
+  });
+  configurarDropzone('pa-dropzone', () => idDeclParaArchivos, 'pa-lista-archivos');
+
+  function mostrarMensajeDecl(texto, tipo) {
+    const el = document.getElementById('mensaje-form-decl');
+    el.textContent = texto;
+    el.className = 'visible ' + tipo;
+  }
+  function ocultarMensajeDecl() {
+    const el = document.getElementById('mensaje-form-decl');
+    el.className = '';
+  }
+
+  document.getElementById('form-declaracion').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar-decl');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    const clienteId = document.getElementById('fd-cliente').value;
+    const valorCobradoRaw = document.getElementById('fd-valor-cobrado').value;
+    const impuestosSeleccionados = Array.from(
+      document.querySelectorAll('#fd-lista-impuestos input[type="checkbox"]:checked')
+    ).map(cb => cb.value);
+
+    const payload = {
+      Cliente: clienteId || null,
+      FechaInicioPeriodo: document.getElementById('fd-fecha-inicio').value || null,
+      FechaFinPeriodo: document.getElementById('fd-fecha-fin').value || null,
+      Estado: document.getElementById('fd-estado').value,
+      EstadoContador: document.getElementById('fd-estado-contador').value,
+      FechaPresentacion: document.getElementById('fd-fecha-presentacion').value || null,
+      ValorCobrado: valorCobradoRaw ? Number(valorCobradoRaw) : null,
+      PagadoContador: document.getElementById('fd-pagado-contador').dataset.valor === 'true',
+      PagadoDian: document.getElementById('fd-pagado-dian').dataset.valor === 'true',
+    };
+
+    let error, declaracionId = idDeclEnEdicion;
+
+    if (idDeclEnEdicion) {
+      ({ error } = await sb.from('TblDeclaraciones').update(payload).eq('id', idDeclEnEdicion));
+    } else {
+      const resultado = await sb.from('TblDeclaraciones').insert(payload).select('id').single();
+      error = resultado.error;
+      if (resultado.data) declaracionId = resultado.data.id;
+    }
+
+    if (error) {
+      console.error(error);
+      btn.disabled = false;
+      btn.textContent = 'Guardar declaración';
+      mostrarMensajeDecl('No se pudo guardar: ' + error.message, 'err');
+      return;
+    }
+
+    // Reemplaza los impuestos asociados: borra los existentes y crea los seleccionados
+    const { error: errorBorrar } = await sb
+      .from('TblDeclaracionImpuestos')
+      .delete()
+      .eq('Declaracion', declaracionId);
+
+    if (errorBorrar) {
+      console.error(errorBorrar);
+      btn.disabled = false;
+      btn.textContent = 'Guardar declaración';
+      mostrarMensajeDecl('Se guardó la declaración, pero no se pudieron actualizar los impuestos: ' + errorBorrar.message, 'err');
+      return;
+    }
+
+    if (impuestosSeleccionados.length) {
+      const filas = impuestosSeleccionados.map(calId => ({
+        Declaracion: declaracionId,
+        Calendario: calId,
+      }));
+      const { error: errorInsertar } = await sb.from('TblDeclaracionImpuestos').insert(filas);
+      if (errorInsertar) {
+        console.error(errorInsertar);
+        btn.disabled = false;
+        btn.textContent = 'Guardar declaración';
+        mostrarMensajeDecl('Se guardó la declaración, pero no se pudieron guardar los impuestos: ' + errorInsertar.message, 'err');
+        return;
+      }
+    }
+
+    const eraNueva = !idDeclEnEdicion;
+    idDeclEnEdicion = declaracionId;
+
+    btn.disabled = false;
+    btn.textContent = 'Guardar declaración';
+    mostrarMensajeDecl('Declaración guardada correctamente.', 'ok');
+    await cargarDeclaraciones();
+    await cargarAlertas();
+
+    if (eraNueva) {
+      // Se queda en el panel, ahora en modo edición, para permitir adjuntar archivos
+      document.getElementById('titulo-form-decl').textContent = 'Editar declaración';
+      document.getElementById('ficha-num-decl').textContent = 'Declaración N.º ' + declaracionId;
+      mostrarBloqueArchivos(true);
+      await cargarArchivosEn(declaracionId, 'fd-lista-archivos');
+    } else {
+      setTimeout(cerrarFormularioDeclaracion, 600);
+    }
+  });
+
+  function mostrarMensaje(texto, tipo) {
+    const el = document.getElementById('mensaje-form');
+    el.textContent = texto;
+    el.className = 'visible ' + tipo;
+  }
+  function ocultarMensaje() {
+    const el = document.getElementById('mensaje-form');
+    el.className = '';
+  }
+
+  // -------- guardar (crear o actualizar) --------
+  document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    const telefonoRaw = document.getElementById('f-telefono').value.trim();
+
+    const payload = {
+      Nombres: document.getElementById('f-nombres').value.trim() || null,
+      Apellido: document.getElementById('f-apellido').value.trim() || null,
+      TipoDocumento: document.getElementById('f-tipo-documento').value || null,
+      Documento: document.getElementById('f-documento').value.trim() || null,
+      FechaExped: document.getElementById('f-fecha-exped').value || null,
+      TipoPersona: document.getElementById('f-tipo-persona').value || null,
+      Correo: document.getElementById('f-correo').value.trim() || null,
+      Telefono: telefonoRaw ? Number(telefonoRaw) : null,
+      Ocupacion: document.getElementById('f-ocupacion').value.trim() || null,
+      PS_Dian: document.getElementById('f-ps-dian').value.trim() || null,
+    };
+
+    let error;
+    if (idEnEdicion) {
+      ({ error } = await sb.from('TblCliente').update(payload).eq('id', idEnEdicion));
+    } else {
+      ({ error } = await sb.from('TblCliente').insert(payload));
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Guardar cliente';
+
+    if (error) {
+      console.error(error);
+      mostrarMensaje('No se pudo guardar: ' + error.message, 'err');
+      return;
+    }
+
+    mostrarMensaje('Cliente guardado correctamente.', 'ok');
+    await cargarClientes();
+    vencimientosGeneralesCargados = false; // fuerza recarga la próxima vez que se visite Vencimientos
+    setTimeout(cerrarFormulario, 600);
+  });
+
+  // =====================================================================
+  // FORMULARIO PÚBLICO: CUESTIONARIO DE RENTA (modo ?formulario=renta)
+  // =====================================================================
+  let anioGravablePublico = null;
+  let tiposDocumentoPublico = [];
+  let contadorFilaInmueble = 0;
+  let contadorFilaDependiente = 0;
+
+  const SITUACIONES_DEFINICION = [
+    { clave: 'compro_inmueble', texto: 'Compró un inmueble' },
+    { clave: 'vendio_inmueble', texto: 'Vendió un inmueble' },
+    { clave: 'compro_vehiculo', texto: 'Compró un vehículo' },
+    { clave: 'vendio_vehiculo', texto: 'Vendió un vehículo' },
+    { clave: 'constituyo_sociedad', texto: 'Constituyó una sociedad' },
+    { clave: 'recibio_herencia', texto: 'Recibió una herencia' },
+    { clave: 'recibio_donacion', texto: 'Recibió una donación' },
+    { clave: 'fue_socio', texto: 'Fue socio o accionista de una empresa' },
+  ];
+
+  async function cargarTipoDocumentoParaFormularioPublico() {
+    const { data, error } = await sb.from('TbltipoDocumento').select('id, TipoDoc').order('TipoDoc');
+    if (error) { console.error(error); return; }
+    tiposDocumentoPublico = data || [];
+    const sel = document.getElementById('cr-tipo-doc');
+    tiposDocumentoPublico.forEach(t => {
+      const op = document.createElement('option');
+      op.value = t.id;
+      op.textContent = t.TipoDoc;
+      sel.appendChild(op);
+    });
+  }
+
+  async function cargarAnioGravableParaFormularioPublico() {
+    const { data, error } = await sb.from('TblConfiguracion').select('AnioGravable').limit(1).single();
+    anioGravablePublico = (!error && data) ? data.AnioGravable : new Date().getFullYear() - 1;
+
+    document.getElementById('cr-p1-titulo').textContent = `1. ¿Durante el año ${anioGravablePublico} salió del país?`;
+    document.getElementById('cr-p2-titulo').textContent = `2. Durante el año ${anioGravablePublico} recibió ingresos por:`;
+    document.getElementById('cr-p10-titulo').textContent = `10. ¿Tiene deudas o préstamos pendientes con personas al 31 de diciembre de ${anioGravablePublico}?`;
+    document.getElementById('cr-p15-titulo').textContent = `15. ¿Durante el año ${anioGravablePublico} ocurrió alguna de las siguientes situaciones?`;
+  }
+
+  function inicializarSituacionesGrilla() {
+    const cuerpo = document.getElementById('cr-situaciones-grilla');
+    cuerpo.innerHTML = '';
+    SITUACIONES_DEFINICION.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.texto}</td>
+        <td><input type="radio" name="sit-${s.clave}" value="si"></td>
+        <td><input type="radio" name="sit-${s.clave}" value="no" checked></td>
+      `;
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  // -------- radios que muestran/ocultan un bloque condicional --------
+  document.querySelectorAll('.radio-condicional').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const grupo = document.getElementsByName(radio.name);
+      let valor = 'no';
+      grupo.forEach(r => { if (r.checked) valor = r.value; });
+      const destino = document.getElementById(radio.dataset.target);
+      if (destino) destino.classList.toggle('oculto', valor !== 'si');
+    });
+  });
+
+  document.getElementById('cr-ingresos-otros').addEventListener('change', (e) => {
+    document.getElementById('ingresos-otros-condicional').classList.toggle('oculto', !e.target.checked);
+  });
+
+  // -------- filas dinámicas: inmuebles --------
+  function crearFilaInmueble() {
+    contadorFilaInmueble++;
+    const div = document.createElement('div');
+    div.className = 'fila-dinamica';
+    div.dataset.filaInmueble = contadorFilaInmueble;
+    div.innerHTML = `
+      <button type="button" class="btn-quitar-fila">Quitar</button>
+      <div class="fila-2">
+        <div class="campo"><label>Tipo de inmueble</label><input type="text" class="inmueble-tipo"></div>
+        <div class="campo"><label>Participación (%)</label><input type="number" min="0" max="100" step="0.01" class="inmueble-participacion"></div>
+      </div>
+    `;
+    div.querySelector('.btn-quitar-fila').addEventListener('click', () => div.remove());
+    return div;
+  }
+  function inicializarFilaInmueble() {
+    document.getElementById('cr-inmuebles-lista').appendChild(crearFilaInmueble());
+  }
+  document.getElementById('btn-agregar-inmueble').addEventListener('click', () => {
+    document.getElementById('cr-inmuebles-lista').appendChild(crearFilaInmueble());
+  });
+
+  // -------- filas dinámicas: dependientes --------
+  function crearFilaDependiente() {
+    contadorFilaDependiente++;
+    const div = document.createElement('div');
+    div.className = 'fila-dinamica';
+    div.dataset.filaDependiente = contadorFilaDependiente;
+    const opcionesTipoDoc = tiposDocumentoPublico.map(t => `<option value="${t.id}">${t.TipoDoc}</option>`).join('');
+    div.innerHTML = `
+      <button type="button" class="btn-quitar-fila">Quitar</button>
+      <div class="fila-2">
+        <div class="campo"><label>Nombre</label><input type="text" class="dep-nombre"></div>
+        <div class="campo"><label>Edad</label><input type="number" min="0" class="dep-edad"></div>
+      </div>
+      <div class="fila-2">
+        <div class="campo"><label>Tipo de documento</label><select class="dep-tipo-doc"><option value="">Selecciona</option>${opcionesTipoDoc}</select></div>
+        <div class="campo"><label>No. de documento</label><input type="text" class="dep-num-doc"></div>
+      </div>
+      <div class="campo"><label>Parentesco</label><input type="text" class="dep-parentesco"></div>
+    `;
+    div.querySelector('.btn-quitar-fila').addEventListener('click', () => div.remove());
+    return div;
+  }
+  function inicializarFilaDependiente() {
+    document.getElementById('cr-dependientes-lista').appendChild(crearFilaDependiente());
+  }
+  document.getElementById('btn-agregar-dependiente').addEventListener('click', () => {
+    document.getElementById('cr-dependientes-lista').appendChild(crearFilaDependiente());
+  });
+
+  // -------- confirmar número de documento --------
+  function documentosCoinciden() {
+    const num = document.getElementById('cr-num-doc').value.trim();
+    const confirmar = document.getElementById('cr-confirmar-doc').value.trim();
+    const msg = document.getElementById('cr-mensaje-documento');
+    if (confirmar && num !== confirmar) {
+      msg.textContent = 'El número de documento no coincide con la confirmación.';
+      msg.className = 'mensaje-inline visible err';
+      return false;
+    }
+    msg.className = 'mensaje-inline';
+    return true;
+  }
+  document.getElementById('cr-confirmar-doc').addEventListener('input', documentosCoinciden);
+  document.getElementById('cr-num-doc').addEventListener('input', documentosCoinciden);
+
+  // -------- envío del cuestionario --------
+  function valorRadio(nombre) {
+    const el = document.querySelector(`input[name="${nombre}"]:checked`);
+    return el ? el.value : 'no';
+  }
+  function esSi(nombre) { return valorRadio(nombre) === 'si'; }
+
+  document.getElementById('form-cuestionario-renta').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('cr-mensaje');
+    msg.className = 'mensaje-inline';
+
+    if (!documentosCoinciden()) {
+      document.getElementById('cr-confirmar-doc').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!document.getElementById('cr-acepta-declaracion').checked) {
+      msg.textContent = 'Debes aceptar la declaración para poder enviar el formulario.';
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+
+    const btn = document.getElementById('btn-enviar-cuestionario');
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    const ingresosSeleccionados = Array.from(
+      document.querySelectorAll('input[name="ingresos"]:checked')
+    ).map(cb => cb.value);
+
+    const medicinaPara = Array.from(
+      document.querySelectorAll('input[name="medicina-para"]:checked')
+    ).map(cb => cb.value);
+
+    const inmuebles = Array.from(document.querySelectorAll('#cr-inmuebles-lista .fila-dinamica')).map(fila => ({
+      tipo: fila.querySelector('.inmueble-tipo').value.trim(),
+      participacion: fila.querySelector('.inmueble-participacion').value || null,
+    })).filter(i => i.tipo || i.participacion);
+
+    const dependientes = Array.from(document.querySelectorAll('#cr-dependientes-lista .fila-dinamica')).map(fila => ({
+      nombre: fila.querySelector('.dep-nombre').value.trim(),
+      edad: fila.querySelector('.dep-edad').value || null,
+      tipoDocumento: fila.querySelector('.dep-tipo-doc').value || null,
+      numeroDocumento: fila.querySelector('.dep-num-doc').value.trim(),
+      parentesco: fila.querySelector('.dep-parentesco').value.trim(),
+    })).filter(d => d.nombre);
+
+    const situaciones = {};
+    SITUACIONES_DEFINICION.forEach(s => {
+      situaciones[s.clave] = esSi('sit-' + s.clave);
+    });
+
+    const payload = {
+      NombreDeclarante: document.getElementById('cr-nombre').value.trim(),
+      TipoDocumento: document.getElementById('cr-tipo-doc').value || null,
+      NumeroDocumento: document.getElementById('cr-num-doc').value.trim(),
+      Telefono: document.getElementById('cr-telefono').value.trim(),
+      Correo: document.getElementById('cr-correo').value.trim(),
+      AnioGravable: anioGravablePublico,
+
+      SalioPais: esSi('p1'),
+      SalioPaisPais: document.getElementById('p1-pais').value.trim() || null,
+      SalioPaisTiempo: document.getElementById('p1-tiempo').value.trim() || null,
+
+      IngresosTipos: ingresosSeleccionados,
+      IngresosOtrosDescripcion: document.getElementById('cr-ingresos-otros-desc').value.trim() || null,
+
+      TieneCDT: esSi('p3'),
+      CDTEntidades: document.getElementById('p3-entidades').value.trim() || null,
+
+      TieneInversiones: esSi('p4'),
+      InversionesCuales: document.getElementById('p4-cuales').value.trim() || null,
+
+      TieneCripto: esSi('p5'),
+      CriptoCuales: document.getElementById('p5-cuales').value.trim() || null,
+
+      ActivosExterior: esSi('p6'),
+      ActivosExteriorActivo: document.getElementById('p6-activo').value.trim() || null,
+      ActivosExteriorPais: document.getElementById('p6-pais').value.trim() || null,
+
+      EsPropietarioInmuebles: esSi('p7'),
+      Inmuebles: inmuebles,
+
+      PoseeVehiculos: esSi('p8'),
+      VehiculosCuales: document.getElementById('p8-cuales').value.trim() || null,
+
+      DineroPrestado: esSi('p9'),
+      DineroPrestadoTotal: document.getElementById('p9-total').value || null,
+
+      DeudasPendientes: esSi('p10'),
+      DeudasPendientesTotal: document.getElementById('p10-total').value || null,
+
+      CreditoVivienda: esSi('p11'),
+
+      MedicinaPrepagada: esSi('p12'),
+      MedicinaPrepagadaPara: medicinaPara,
+
+      DependientesEconomicos: esSi('p13'),
+      Dependientes: dependientes,
+
+      AportesVoluntarios: esSi('p14'),
+
+      Situaciones: situaciones,
+
+      InformacionAdicional: document.getElementById('cr-info-adicional').value.trim() || null,
+
+      AceptaDeclaracion: true,
+    };
+
+    const { error } = await sb.from('TblCuestionarioRenta').insert(payload);
+
+    btn.disabled = false;
+    btn.textContent = 'Enviar cuestionario';
+
+    if (error) {
+      console.error(error);
+      msg.textContent = 'No se pudo enviar el formulario: ' + error.message;
+      msg.className = 'mensaje-inline visible err';
+      return;
+    }
+
+    document.getElementById('pantalla-formulario-renta').classList.add('oculto');
+    document.getElementById('pantalla-formulario-gracias').classList.remove('oculto');
+  });
+</script>
+</body>
+</html>
